@@ -163,7 +163,7 @@ def lookup_referenced_strings(reference: dict, payment_method: str | None = None
 _GENERIC_INVITATION = re.compile(
     r"(?i)^\s*(?:se quiser[, ]|quer que eu |posso te ajudar |gostaria que eu |me diga se )"
 )
-_EMOJI = re.compile(r"[\U0001F300-\U0001FAFF]|[\u2600-\u27BF]")
+_EMOJI = re.compile(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\u200d\ufe0e\ufe0f\u20e3\U000E0020-\U000E007F]")
 _OUTSIDE = re.compile(
     r"(?i)\b(?:previsão do tempo|qual (?:é )?o clima|resultado do futebol|"
     r"cotação do bitcoin|capital da frança|receita de bolo|imposto de renda|"
@@ -176,8 +176,13 @@ def outside_scope(message: str) -> bool:
     return bool(_OUTSIDE.search(message))
 
 
+def strip_emojis(content: str) -> str:
+    """Remove emoji characters and sequence joiners, retaining ordinary text."""
+    return _EMOJI.sub("", content).strip()
+
+
 def clean_model_answer(content: str) -> str:
-    """Strip rendered thought tags; avoid repetitive boilerplate and emojis."""
+    """Strip rendered thought tags, repeated boilerplate and all emojis."""
     content = re.sub(r"(?is)<think\b[^>]*>.*?</think\s*>", "", content or "")
     content = re.sub(r"(?is)<think\b[^>]*>.*\Z", "", content)
     lines = []
@@ -189,12 +194,4 @@ def clean_model_answer(content: str) -> str:
             saw_invitation = True
         lines.append(line)
     cleaned = "\n".join(lines).strip()
-    # Limit decorative emojis to one without changing product names or accents.
-    seen = 0
-
-    def limit_emoji(match: re.Match[str]) -> str:
-        nonlocal seen
-        seen += 1
-        return match.group(0) if seen == 1 else ""
-
-    return _EMOJI.sub(limit_emoji, cleaned).strip()
+    return strip_emojis(cleaned)

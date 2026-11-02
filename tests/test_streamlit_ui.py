@@ -65,7 +65,7 @@ class StreamlitUITests(unittest.TestCase):
         trace = [{'tool': 'search_products', 'status': 'ok',
                   'invoked_by': 'application_reference_lookup',
                   'reply_origin': 'python_catalog_result_template'}]
-        with patch('zubumafu.streamlit_ui.respond', return_value=('Resposta executada', trace)) as backend:
+        with patch('zubumafu.streamlit_ui.respond', return_value=('Resposta executada 🎸', trace)) as backend:
             app = AppTest.from_file(APP).run(timeout=15)
             app.button(key='new_scenario_catalog').click().run(timeout=15)
             test_id = app.session_state['chat_id']
@@ -78,6 +78,8 @@ class StreamlitUITests(unittest.TestCase):
             self.assertEqual(len(app.chat_message), 2)
             self.assertEqual(len(self.store.messages(test_id)), 2)
             self.assertEqual(json.loads(app.json[0].value)['invoked_by'], 'application_reference_lookup')
+            self.assertEqual(self.store.messages(test_id)[-1]['content'], 'Resposta executada')
+            self.assertTrue(all('🎸' not in item.value for item in app.markdown))
 
     def test_backend_error_is_saved_without_traceback_or_machine_details(self):
         with patch('zubumafu.streamlit_ui.respond', side_effect=ConnectionError('private machine address')), patch('zubumafu.streamlit_ui.logger.exception'):

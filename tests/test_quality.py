@@ -56,12 +56,17 @@ class QualityTests(unittest.TestCase):
         else:
             self.assertIn("5% de desconto", reply)
 
-    def test_cleanup_removes_thinking_duplicate_invitations_and_excess_emoji(self):
-        model_reply = "<think>segredo da análise</think>Oi! 🎸😊\nSe quiser, posso detalhar.\nSe quiser, posso detalhar mais."
+    def test_cleanup_removes_thinking_duplicate_invitations_and_all_emoji(self):
+        model_reply = "<think>segredo da análise</think>Oi! 🎸😊 👨‍👩‍👧‍👦 🇧🇷 1️⃣\nSe quiser, posso detalhar.\nSe quiser, posso detalhar mais."
         reply = clean_model_answer(model_reply)
         self.assertNotIn("segredo", reply)
         self.assertEqual(reply.count("Se quiser"), 1)
         self.assertNotIn("😊", reply)
+        self.assertNotIn("🎸", reply)
+        self.assertNotIn("🇧", reply)
+        self.assertNotIn("\u200d", reply)
+        self.assertNotIn("\ufe0f", reply)
+        self.assertNotIn("\u20e3", reply)
 
     def test_catalog_agent_ignores_unsupported_model_superlatives_and_profile(self):
         attempts = []
