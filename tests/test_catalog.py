@@ -26,7 +26,7 @@ class CatalogTests(unittest.TestCase):
         self.assertTrue(result["products"])
         for item in result["products"]:
             self.assertEqual(item["category"], "Guitarras")
-            self.assertLessEqual(float(item["price_brl"]), 8000)
+            self.assertLessEqual(float(item["final_price_brl"]), 8000)
             self.assertGreater(item["stock_quantity"], 0)
             self.assertEqual(item["status"], "active")
 

@@ -1,6 +1,6 @@
 # Development handoff
 
-Catalog and policy retrieval are implemented. This is not the finished Artefact submission.
+Catalog, policy retrieval and promotion/PIX pricing are implemented. This is not the finished Artefact submission.
 
 ## Repository continuity
 
@@ -23,16 +23,22 @@ The existing first commit (`3c89eec`) and the prototype commits (`fe3745b`, `992
 - Policy questions require the corresponding tool. A successful catalog lookup cannot authorize a policy reply.
 - Missing purchase channel and online receipt date in an explicit regret dialogue are handled with source-verified clarification templates after the model/tool round-trip; the trace records their origin.
 - A separate two-turn policy acceptance script checks actual source use and follow-up behavior.
+- `get_product_pricing` calculates original, promotional and final prices with `Decimal`; active promotions do not stack with PIX.
+- Catalog budgets and ordering use the final eligible price, with explicit original/final fields and a configurable payment method.
+- A separate three-turn acceptance script exercises a product quote, PIX follow-up and budget comparison with the actual model.
+- Missing fields in a single-model promotional quote are completed from tool facts with explicit trace metadata; a skipped fresh lookup has one bounded verification retry.
 
 See [validation.md](validation.md) for the actual evidence and its limits. A simulated-model test is not a real-model test. Reasoning hidden from a customer is not proof that reasoning generation was disabled.
 
+The latest pricing milestone passed 61 offline tests and its actual three-turn source/price checks. Evidence is in `examples/03_promotion_pix_budget.{md,json}`. Timings were 62.22, 101.95 and 140.06 seconds. Price completeness and a bounded source-verification retry are application safeguards; do not attribute them entirely to the model. Tone/wording and latency still require work. Three distinct observed conversations now exist; example count alone is not final acceptance.
+
 ## Next increment
 
-1. Implement promotion and pricing rules, including non-cumulative discounts and the activity flag's limitations.
+1. Review factuality/persona and out-of-scope/error behavior, keeping recorded observations distinct from expected results.
 2. Keep unresolved contacts, installment thresholds and the exact R$ 500 freight boundary explicit; do not silently turn them into automatic decisions.
 3. Decide whether limited order consultation belongs in the final scope; define its demo verification and privacy limits before exposing customer data.
 4. Complete out-of-scope/error handling and the chosen acceptance matrix. Return clarification phrase matching is not a general eligibility engine.
-5. Complete 3–5 distinct observed conversations with English documentation; review clean setup and final submission materials.
+5. Review the recorded conversations for final coverage and add scenarios where needed; check clean setup and final submission materials.
 
 The known reasoning/latency limitation should also be reevaluated with measured evidence. Do not expand the project with multi-agent orchestration or additional infrastructure unless a concrete requirement warrants it.
 

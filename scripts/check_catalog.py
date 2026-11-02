@@ -77,7 +77,7 @@ def main() -> int:
         ),
         "retrieved_products_fit_request": bool(products) and all(
             product["category"] == "Violões"
-            and Decimal(product["price_brl"]) <= 1000
+            and Decimal(product["final_price_brl"]) <= 1000
             and product["stock_quantity"] > 0
             and product["status"] == "active"
             for product in products

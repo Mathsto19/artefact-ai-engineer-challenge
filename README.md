@@ -2,7 +2,7 @@
 
 **Status: early functional prototype; not ready for delivery.**
 
-Zubumafu is an experimental text-based customer assistant for **Empório da Música**, the fictional music store in Artefact's AI Engineer challenge. It speaks Brazilian Portuguese with a warm, musical and professional personality. The current milestone offers catalog searches and section-based retrieval from the original store-policy PDF, with tool results returned to the model and verified chapter/page references appended to policy replies. It does not yet cover the full challenge.
+Zubumafu is an experimental text-based customer assistant for **Empório da Música**, the fictional music store in Artefact's AI Engineer challenge. It speaks Brazilian Portuguese with a warm, musical and professional personality. The current milestone offers catalog searches, retrieval from the original store-policy PDF, and deterministic promotion/PIX pricing. Tool results are returned to the model; verified chapter/page references are appended to policy replies. It does not yet cover the full challenge.
 
 ## Stack and rationale
 
@@ -14,6 +14,7 @@ Zubumafu is an experimental text-based customer assistant for **Empório da Mús
 | Python tool calling | CSV filtering stays in code while the model handles intent and language. |
 | Session-only memory | Enough for a prototype without the overhead of storing conversation histories. |
 | Policies by document sections | `pypdf` extracts the supplied manual's chapters with page references; a vector database is unnecessary for this eight-page source. |
+| `Decimal` pricing | Python applies eligible discounts, rounds BRL amounts and compares the final price with the budget. |
 
 See [architecture decisions](docs/decisions.md), [verification evidence](docs/validation.md) and the [development handoff](docs/handoff.md).
 
@@ -62,6 +63,14 @@ Run the separate two-turn return-policy acceptance scenario against the actual m
 
 It checks retrieval of chapter 4/page 4, the purchase-channel question, the receipt-date follow-up, conversation history and source references. Review the actual answers for correctness and naturalness in addition to the structural checks.
 
+Run the separate three-turn promotion/PIX/budget scenario:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_pricing.py --output tmp/pricing-smoke.json
+```
+
+It asks the price of the Kalani KAL-700T Tenor Natural, follows up about PIX, then checks a R$ 340 budget. The supplied data gives a R$ 359,00 original price, 10% promotion and R$ 323,10 final price, unchanged by PIX. The script records fresh source lookups on each turn; structural checks still require manual answer review.
+
 ### Optional configuration
 
 | Environment variable | Default | Purpose |
@@ -81,10 +90,12 @@ Set variables in the terminal before starting the app, for example `$env:OLLAMA_
 | `zubumafu/model.py` | Lazy SDK import, local endpoint and timeout configuration. |
 | `zubumafu/persona.py` | Persona, scope and instructions to use verified store facts. |
 | `zubumafu/catalog.py` | Read-only CSV search, input validation, filters and BRL display formatting. |
+| `zubumafu/pricing.py` | Promotion lookup, non-cumulative PIX rules and deterministic rounded BRL prices. |
 | `zubumafu/policies.py` | Original PDF extraction, ten chapter boundaries, topic matching, page provenance and ambiguity warnings. |
-| `tests/` | Offline catalog and orchestration regression tests. |
+| `tests/` | Offline catalog, policy, pricing and orchestration regression tests. |
 | `scripts/check_catalog.py` | Opt-in acceptance check against the actual local model. |
 | `scripts/check_policies.py` | Opt-in two-turn return-policy acceptance check against the actual local model. |
+| `scripts/check_pricing.py` | Opt-in three-turn promotion, PIX and budget acceptance check against the actual local model. |
 | `docs/` | Decisions, observed validation and the next development steps. |
 | `examples/` | Recorded interactions as they are validated; final coverage is pending. |
 | `data/` | Original supplied datasets and store policies. |
@@ -92,13 +103,19 @@ Set variables in the terminal before starting the app, for example `$env:OLLAMA_
 
 ## Data and tools
 
-The initial tool is `search_products`, which reads the supplied products and categories CSVs and filters by category, a literal search phrase in names/descriptions/specifications, budget and stock. Prices are parsed with `Decimal`; Brazilian currency display is formatted in Python. The tool returns up to six records, ordered by price, and the full match count. The persona requests at most three suggestions per answer. Search is literal, not semantic, so synonyms and multiword feature combinations can miss matches.
+`search_products` reads the supplied products/categories/promotions CSVs and filters by category, a literal search phrase in names/descriptions/specifications, budget and stock. The budget and ordering use the **final** eligible price, including the PIX discount when `payment_method="pix"`. The legacy `price_brl` and `price_display_brl` fields retain the original price; `final_price_brl` and `final_price_display_brl` give the effective price. The filter trace explicitly identifies this budget meaning. The tool returns up to six records and the full match count; the persona requests at most three suggestions. Search is literal, not semantic, so synonyms and multiword feature combinations can miss matches.
 
-Price and stock values are from the supplied snapshot, not a live commerce integration. All seven original files under `data/` were preserved byte for byte when importing both prototype increments. Unused operational CSVs remain available for later milestones.
+`get_product_pricing` resolves an exact product ID or full/partial model name and calculates its original price, active promotion, discount and final price. Ambiguous names need clarification. A single active promotion takes precedence; the manual's 5% PIX discount applies only to a product without an active promotion. Discounts are never stacked. Multiple active promotions for one product produce an ambiguity, rather than silently choosing or adding them. Budget searches exclude records whose final price cannot be established. Calculations use `Decimal` with `ROUND_HALF_UP` at the final cent, then reconcile the displayed discount against the original price. The original CSV prices already have two decimal places.
+
+Only `is_active` determines promotion activity: the source has no campaign dates, so the assistant cannot promise expiry dates. Prices and sources are visible in the expandable tool evidence. This feature does not calculate installment schedules, freight, cart totals or historical order prices.
+
+If a single-model promotional quote omits the original price, percentage or final price, Python adds the missing fields from the successful tool result. The trace marks `reply_origin: model_with_source_price_details` and `added_price_fields`. This checks completeness; it does not validate every claim in the model draft. When the first model reply skips a required fresh lookup, one verification reminder can request that lookup within the existing three-request limit. If verification still fails, the customer receives a fallback.
+
+Price and stock values are from the supplied snapshot, not a live commerce integration. All seven original files under `data/` were preserved byte for byte when importing the prototype increments. Unused operational CSVs remain available for later milestones.
 
 `search_store_policies` reads the original `data/políticas_da_loja.pdf`, recognizes its ten chapter headings and retains text continued on subsequent pages. It selects relevant chapters using a small topic/keyword map and returns PDF excerpts, 1-based pages, source version and clarification requirements. For defects, it includes the warranty chapter alongside return rules. This is a purpose-built retriever for the supplied manual, not a general semantic PDF search engine; compound questions can require more than one lookup.
 
-The tool flags conflicting contact numbers, inconsistent installment minimums and the undefined local-delivery boundary of exactly R$ 500. These warnings do not silently resolve the source. Policy citations are appended by Python from successful tool results, with each chapter mapped to its actual pages. The catalog and PDF extraction are cached for the Python process; restart the app after changing source files.
+The tool flags conflicting contact numbers, inconsistent installment minimums and the undefined local-delivery boundary of exactly R$ 500. These warnings do not silently resolve the source. Policy citations are appended by Python from successful tool results, with each chapter mapped to its actual pages. Catalog, promotion and PDF reads are cached for the Python process; restart the app after changing source files.
 
 For an explicit regret conversation with missing purchase information, Python controls two clarification questions after a successful return-policy lookup and the model/tool round-trip: purchase channel first, then actual receipt date for an online purchase. These displayed questions use short templates rather than an unconstrained model draft. The trace marks `reply_origin: source_verified_clarification_template` and the missing field. This prevents the draft from skipping those questions or inventing a return-submission procedure. It is conservative phrase matching, not a general date parser or an eligibility decision engine.
 
@@ -106,11 +123,11 @@ No external source is used for store facts. General musical knowledge may assist
 
 ## Known limitations
 
-- Product search and policy retrieval are implemented. Product-specific promotions, price calculations and order lookup remain pending; general promotion/payment rules can already be retrieved from the manual.
-- Automated tests with a simulated model and observed catalog/policy scenarios are separate evidence. This limited sample does not establish reliability, latency across workloads or full challenge compliance.
+- Catalog, policy retrieval and product-specific promotion/PIX pricing are implemented. Order lookup, installment calculations and freight calculations remain outside the current implementation.
+- Automated tests with a simulated model and actual model acceptance runs are separate evidence. This limited sample does not establish reliability, latency across workloads or full challenge compliance.
 - The installed Qwen3 4B template emitted reasoning despite requests with `think=False`. The application also uses `/no_think` as a steering instruction and strips labeled reasoning from visible content. This is an output safeguard, not proof that reasoning generation was disabled. Latency remains a limitation.
 - Each reply is bounded to three model requests, five tools per request, 2,048 generated tokens per request and a 4,096-token context. The visible history includes at most 12 previous messages in each request; long conversations can exceed the context budget. Truncated final generations produce a fallback instead of an incomplete answer.
-- Source-intent checks are heuristic. Recognized catalog and policy questions require a successful lookup of the corresponding tool; a catalog lookup cannot authorize a policy answer or vice versa. Return follow-ups about channel/receipt retain their policy context. The code does not yet verify every generated factual statement or citation written by the model against tool results.
+- Source-intent checks are heuristic. Policy questions require the PDF tool; product prices require a fresh catalog or pricing lookup. A general policy lookup alone cannot authorize a specific product quote. Return follow-ups about channel/receipt retain their policy context; price/PIX follow-ups use recent conversation context. The code does not yet verify every generated factual statement, product reference or model-written citation against tool results.
 - The first observed answer focused on beginners even though the customer had not specified experience. Persona instructions discourage this assumption, but instructions alone do not guarantee compliance.
 - The interface does not provide production authentication, customer verification or persistence.
 - Conflicting contacts and installment rules, and the missing exact R$ 500 freight case, are explicitly flagged. The prototype does not resolve those policies or approve, reject or register return requests.
@@ -119,16 +136,16 @@ No external source is used for store facts. General musical knowledge may assist
 
 ## What would be done with more time
 
-Complete promotion/pricing tools, limited and explicitly non-production order consultation if selected for the final scope, automated grounding checks, multilingual examples, broader dialog evaluation and a stronger authentication design.
+Limited and explicitly non-production order consultation if selected for the final scope, automated grounding checks, broader dialog evaluation, latency improvements and a stronger authentication design.
 
 ## AI assistance disclosure
 
-ChatGPT (OpenAI) assisted with planning, architecture decisions, drafting the initial Python code/tests and the policy-retrieval increment, and reviewing documentation. Codex assisted with the original material review and repository setup, integrated the prototype history and subsequent policy changes into the existing repository, preserved and extended the regression tests, corrected tool/output handling, and ran local model and interface checks. The local inference model is Qwen3 4B via Ollama. Recorded validation distinguishes simulated model tests from real requests; example conversations must not be fabricated.
+ChatGPT (OpenAI) assisted with planning, architecture decisions, drafting the initial Python code/tests and the policy/pricing increments, and reviewing documentation. Codex assisted with the original material review and repository setup, integrated the prototype history and subsequent policy/pricing changes into the existing repository, preserved and extended the regression tests, corrected tool/output handling, and ran local model and interface checks. The local inference model is Qwen3 4B via Ollama. Recorded validation distinguishes simulated model tests from real requests; example conversations must not be fabricated.
 
 ## Submission checklist (not yet completed)
 
 - [ ] All required scope functions implemented and validated.
-- [ ] 3–5 **real** interaction transcripts covering distinct scenarios.
+- [x] Three **real** interaction transcripts with English translations and source evidence; final coverage/quality review remains pending.
 - [x] Public GitHub repository initialized; the initial and imported prototype commits are preserved.
 - [ ] Final README and decisions reviewed in English.
 - [ ] Repo frozen after submission (no post-deadline changes).

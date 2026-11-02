@@ -9,6 +9,7 @@ from decimal import Decimal, InvalidOperation
 from functools import lru_cache
 from pathlib import Path
 
+from .pricing import display_brl, pricing_for_product
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 PRODUCTS_FILE = DATA_DIR / "desafio_tecnico_ai_eng - products.csv"
@@ -57,14 +58,16 @@ def search_products(
     query: str = "",
     max_price_brl: float = 0,
     available_only: bool = True,
+    payment_method: str = "standard",
 ) -> str:
     """Search the store's CSV product catalog using category, description/name and maximum BRL price.
 
     Args:
         category: Instrument category in Portuguese, such as 'violão', 'guitarra' or 'ukulele'.
         query: Optional model name, brand, technical feature or musical genre to match.
-        max_price_brl: Maximum price in BRL. Use 0 when the customer gave no budget.
+        max_price_brl: Maximum FINAL price in BRL, after eligible discounts. Use 0 for no budget.
         available_only: True to return only active products with positive stock.
+        payment_method: 'standard' or 'pix'; PIX is not stacked with an active promotion.
 
     Returns:
         A JSON string containing matched product records, source and filters.
@@ -73,6 +76,9 @@ def search_products(
         return json.dumps({"error": "category and query must be strings"})
     if not isinstance(available_only, bool):
         return json.dumps({"error": "available_only must be a boolean"})
+    if not isinstance(payment_method, str) or _normalize(payment_method) not in {"standard", "pix"}:
+        return json.dumps({"error": "payment_method must be standard or pix"})
+    payment_method = _normalize(payment_method)
     if isinstance(max_price_brl, bool):
         return json.dumps({"error": "max_price_brl must be a number"})
     try:
@@ -98,9 +104,11 @@ def search_products(
             stock = int(product["stock_quantity"])
         except (InvalidOperation, ValueError):
             continue
-        if budget and price > budget:
-            continue
         if available_only and (product["status"] != "active" or stock <= 0):
+            continue
+        pricing = pricing_for_product(product, payment_method)
+        # A missing/ambiguous final price cannot be advertised as within budget.
+        if budget and (pricing["status"] != "ok" or Decimal(pricing["final_price_brl"]) > budget):
             continue
         try:
             specs = json.loads(product["specs"]) if product["specs"] else {}
@@ -111,17 +119,27 @@ def search_products(
             "name": name,
             "category": category_name,
             "price_brl": str(price.quantize(Decimal("0.01"))),
-            "price_display_brl": "R$ " + f"{price:,.2f}".replace(",", "_").replace(".", ",").replace("_", "."),
+            "price_display_brl": display_brl(price),
+            "pricing_status": pricing["status"],
+            "final_price_brl": pricing.get("final_price_brl"),
+            "final_price_display_brl": pricing.get("final_price_display_brl"),
+            "discount_percent": pricing.get("discount_percent"),
+            "discount_type": pricing.get("discount_type"),
+            "active_promotion": pricing.get("active_promotion"),
+            "pix_discount_applied": pricing.get("pix_discount_applied"),
+            "pix_non_cumulative": pricing.get("pix_non_cumulative"),
             "stock_quantity": stock,
             "status": product["status"],
             "description": description,
             "specs": specs,
         })
-    results.sort(key=lambda item: (Decimal(str(item["price_brl"])), str(item["name"])))
+    results.sort(key=lambda item: (Decimal(str(item["final_price_brl"] or item["price_brl"])), str(item["name"])))
     payload = {
         "source": "data/desafio_tecnico_ai_eng - products.csv",
         "source_type": "provided_snapshot_not_live_inventory",
-        "filters": {"category": category, "query": query, "max_price_brl": str(budget), "available_only": available_only},
+        "promotion_source": "data/desafio_tecnico_ai_eng - promotions.csv",
+        "pricing_note": "price_brl is the original price; budget filtering and ordering use final_price_brl. Only is_active indicates promotion activity; dates are unavailable. PIX does not stack with promotions. Do not quote a final price when pricing_status is not ok.",
+        "filters": {"category": category, "query": query, "max_price_brl": str(budget), "budget_applies_to": "final_price_brl", "available_only": available_only, "payment_method": payment_method},
         "total_matches": len(results),
         "shown_matches": min(len(results), 6),
         "products": results[:6],

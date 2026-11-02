@@ -10,11 +10,13 @@ from typing import Any
 
 from .catalog import _normalize, search_products
 from .policies import search_store_policies
+from .pricing import get_product_pricing
 from .persona import SYSTEM_PROMPT
 
 
 MODEL = "qwen3:4b"
-TOOLS = {"search_products": search_products, "search_store_policies": search_store_policies}
+TOOLS = {"search_products": search_products, "search_store_policies": search_store_policies,
+         "get_product_pricing": get_product_pricing}
 TOOL_CYCLE_LIMIT = 3
 
 
@@ -37,8 +39,9 @@ def respond(
     messages.extend((history or [])[-12:])
     messages.append({"role": "user", "content": user_message + "\n/no_think"})
     trace: list[dict[str, object]] = []
+    required_tool = _required_tool(user_message, history or [])
 
-    for _ in range(TOOL_CYCLE_LIMIT):
+    for attempt in range(TOOL_CYCLE_LIMIT):
         response = chat_fn(
             model=os.environ.get("OLLAMA_MODEL", MODEL),
             messages=messages,
@@ -55,13 +58,29 @@ def respond(
                 return "Não consegui concluir a resposta. Vamos tentar uma pergunta mais específica?", trace
             if not content:
                 return "Não consegui preparar uma resposta agora. Tente novamente, por favor.", trace
-            required_tool = _required_tool(user_message, history or [])
+            accepted_tools = ({"get_product_pricing", "search_products"}
+                              if required_tool == "product_pricing" else {required_tool})
             confirmed_lookup = any(
-                item["status"] == "ok" and (required_tool is None or item["tool"] == required_tool)
+                item["status"] == "ok" and (required_tool is None or item["tool"] in accepted_tools)
                 for item in trace
             )
             if not confirmed_lookup and (required_tool or trace):
+                if attempt == 0 and not trace:
+                    # One bounded repair when the model answers from history
+                    # without requesting the fresh source required for this turn.
+                    tool_names = ", ".join(sorted(name for name in accepted_tools if name))
+                    messages.append({"role": "system", "content": (
+                        "A resposta ainda não foi verificada. Antes de responder à última pergunta, "
+                        f"faça uma consulta nova usando {tool_names}. "
+                        "Resolva o modelo específico pelo histórico e consulte seu nome completo. "
+                        "Não basta reutilizar preços ou regras de uma mensagem anterior."
+                    )})
+                    continue
                 return "Não consegui confirmar essa informação nos arquivos da loja. Pode tentar reformular a pergunta?", trace
+            if required_tool == "product_pricing" and any(
+                token in _normalize(user_message) for token in ("custa", "preco")
+            ):
+                content = _complete_promotion_quote(content, trace)
             clarification = _return_clarification(user_message, history or [])
             return_source_verified = any(
                 item["tool"] == "search_store_policies" and item["status"] == "ok"
@@ -115,9 +134,14 @@ def respond(
                     trace.append({
                         "tool": name,
                         "status": status,
-                        "matches": decoded.get("total_matches", len(sections)),
+                        "matches": decoded.get("total_matches", 1 if decoded.get("product_id") else len(sections)),
                         "filters": decoded.get("filters"),
                         "source": decoded.get("source", decoded.get("source_file")),
+                        "sources": decoded.get("sources"),
+                        "promotion_source": decoded.get("promotion_source"),
+                        "product_id": decoded.get("product_id"),
+                        "pricing": decoded.get("pricing"),
+                        "price_quotes": _price_quotes(decoded),
                         "topic": decoded.get("topic"),
                         "pages": sorted({page for section in sections for page in section["pages"]}),
                         "chapters": [section["chapter"] for section in sections],
@@ -130,6 +154,53 @@ def respond(
             messages.append({"role": "tool", "tool_name": name, "content": result})
 
     return "A consulta ficou mais complexa do que o esperado. Vamos tentar uma pergunta mais específica?", trace
+
+
+def _price_quotes(result: dict) -> list[dict]:
+    """Keep compact verified price facts for completing a single-model quote."""
+    records = result.get("products", [])
+    if "pricing" in result:
+        records = [{"product_id": result["product_id"], **result["pricing"]}]
+    quotes = []
+    for record in records:
+        if record.get("pricing_status", record.get("status")) != "ok":
+            continue
+        quotes.append({
+            "product_id": record["product_id"],
+            "list_price_display_brl": record.get("list_price_display_brl", record.get("price_display_brl")),
+            "final_price_display_brl": record["final_price_display_brl"],
+            "discount_percent": record["discount_percent"],
+            "discount_type": record["discount_type"],
+        })
+    return quotes
+
+
+def _complete_promotion_quote(content: str, trace: list[dict]) -> str:
+    """Add omitted promotion fields from one verified product, never recalculate.
+
+    This completeness safeguard is not a general validator of model claims.
+    """
+    quotes = {quote["product_id"]: quote for item in trace if item["status"] == "ok"
+              for quote in item.get("price_quotes", [])}
+    if len(quotes) != 1:
+        return content
+    quote = next(iter(quotes.values()))
+    if quote["discount_type"] != "promotion":
+        return content
+    details = [
+        ("list_price", quote["list_price_display_brl"], "Preço de tabela"),
+        ("discount_percent", quote["discount_percent"] + "%", "Promoção ativa"),
+        ("final_price", quote["final_price_display_brl"], "Preço final"),
+    ]
+    missing = [(field, value, label) for field, value, label in details
+               if value.replace("R$ ", "").replace(" ", "") not in content.replace(" ", "")]
+    if missing:
+        content = "\n".join(f"{label}: {value}." for _, value, label in missing) + "\n\n" + content
+        for item in trace:
+            if item.get("price_quotes") and item["status"] == "ok":
+                item["reply_origin"] = "model_with_source_price_details"
+                item["added_price_fields"] = [field for field, _, _ in missing]
+    return content
 
 
 def _visible_content(content: str) -> str:
@@ -167,6 +238,22 @@ def _requires_policy_lookup(message: str) -> bool:
 
 
 def _required_tool(message: str, history: list[dict[str, str]]) -> str | None:
+    normalized = _normalize(message)
+    # Product prices can be grounded in either deterministic catalog prices or
+    # the dedicated pricing tool. General payment policy still needs the PDF.
+    policy_subject = any(token in normalized for token in (
+        "devol", "troca", "arrepend", "defeit", "garantia", "frete",
+        "entrega", "parcel", "horar", "endereco", "telefone", "privacidade",
+    ))
+    product_context = _requires_catalog_lookup(message) or any(
+        _requires_catalog_lookup(item.get("content", "")) for item in history[-4:]
+    )
+    if not policy_subject and (
+        any(token in normalized for token in ("custa", "preco"))
+        or (product_context and any(token in normalized for token in ("pix", "desconto", "promoc", "mais barato")))
+        or (product_context and "orcamento" in normalized and re.search(r"\b(esse|essa|ele|ela)\b", normalized))
+    ):
+        return "product_pricing"
     if _requires_policy_lookup(message):
         return "search_store_policies"
     # A short answer about purchase channel/receipt keeps the return-policy

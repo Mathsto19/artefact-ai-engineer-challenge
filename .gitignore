@@ -32,4 +32,4 @@ Thumbs.db
 .streamlit/secrets.toml
 *.log
 tmp/
-zubumafu-prototipo-inicial.zip
+zubumafu-prototipo-inicial*.zip

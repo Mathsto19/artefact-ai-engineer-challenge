@@ -1,6 +1,6 @@
 # Validation log
 
-Observed on **2 November 2026**, using São Paulo time (UTC-03:00). The first sections record the original catalog milestone; the policy milestone and latest results are appended below. This does not validate the complete challenge.
+Observed on **2 November 2026**, using São Paulo time (UTC-03:00). The first sections record the original catalog milestone; subsequent policy/pricing results are appended below. This does not validate the complete challenge.
 
 ## Source integrity and Git history
 
@@ -127,6 +127,58 @@ The generated text still assumed a beginner profile and claimed the models were 
 
 Streamlit AppTest with a simulated backend verified two chat turns, history passed to the second request, and PDF chapter/page references displayed in the expandable evidence. The earlier catalog/reset/backend-failure interface checks also passed with the new integration. The model acceptance runs above are separate from that interface simulation.
 
-## Current remaining work
+## Remaining work after the policy milestone
 
 Next: product-specific promotions and deterministic price rules, including non-cumulative discounts. An explicit decision on order lookup, broader error/out-of-scope and factuality checks, latency/thinking improvements, and a total of 3–5 distinct observed conversations remain pending. Two distinct conversations are now recorded; rerunning the catalog question is a regression check, not a third distinct example. No final submission has been performed.
+
+## Pricing milestone - integration and offline verification
+
+The third ZIP again started from `9929359`. Only the new pricing module/tests and relevant incremental changes were integrated; current policy controls, dependency pins, history and regression tests were retained. Archive CRC passed and all seven original data files matched by SHA-256. No ZIP Git configuration was imported.
+
+The offline suite passed **61 tests**, including the previous 41. New coverage includes active/inactive promotions, non-cumulative PIX, PIX on a non-promotional product, final-price budget filtering, cent rounding/reconciliation, multiple active promotions, ambiguous/missing product names, invalid discounts/payment methods/IDs, fresh price lookups, wrong-source authorization, missing promotion fields and bounded verification recovery. The existing policy/clarification tests still passed. `pip check` reported no broken requirements; no new dependencies were added.
+
+Real-data arithmetic checks confirmed Kalani KAL-700T: R$ 359.00, 10%, R$ 323.10; Ohana CK-20: R$ 549.00, 20%, R$ 439.20. A R$ 340 budget finds the Kalani using its final price. PIX on non-promotional product 145 gives R$ 11,875.00 from R$ 12,500.00. A synthetic R$ 1,100/10% example gives R$ 990.00. These Python checks are separate from model behavior.
+
+## First actual pricing trial - rejected
+
+The three turns took **69.80, 79.32 and 96.55 seconds**. The first retrieved the correct Kalani through `search_products` and quoted R$ 323.10/10%, but omitted the original price. The second used `get_product_pricing(payment_method="pix")`, retained the product context and correctly denied an extra discount. The third did not request a fresh tool lookup; the application returned a verification fallback instead of allowing an unverified budget answer. The interaction was not accepted.
+
+Both product tools share the deterministic calculator, so either can ground a quote. The acceptance checker now requires the dedicated pricing tool on the PIX turn, while allowing either product tool on the initial quote and budget turn. It also recognizes the observed wording "não adiciona desconto extra"; the earlier phrase check missed that correct explanation. These checker adjustments do not make the missing original price or source-free third turn acceptable.
+
+Python now supplements missing original/percentage/final fields in a single-product promotional quote from verified tool results, tagging the added fields and `reply_origin: model_with_source_price_details`. It does not claim to validate all generated assertions. A first reply that skips a required source lookup gets one verification reminder, within the unchanged three-request cap. A repeated failure still produces a fallback. The offline tests exercise both safeguards.
+
+## Pricing interface and environment verification
+
+Streamlit AppTest with a simulated backend rendered the chat, product ID 127, final price R$ 323.10, non-cumulative PIX flag and all three source entries in expandable pricing evidence, without app exceptions. This was a UI simulation using real pricing records, not a real-model conversation. The running local server also returned HTTP 200/`ok` at `/_stcore/health`.
+
+## Actual pricing acceptance after correction
+
+Command:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_pricing.py --output tmp/pricing-smoke.json
+```
+
+Recorded at **2026-11-02 17:03:17 -03:00**, with the same original `qwen3:4b`, Ollama 0.40.13, SDK 0.6.3 and Python 3.12.10.
+
+| Turn | Observed source use | Displayed outcome | Elapsed |
+| --- | --- | --- | --- |
+| Kalani price | `search_products`, exact model query | R$ 359.00 original, 10% promotion, R$ 323.10 final; 11 units in the snapshot. | 62.22 s |
+| PIX follow-up | `get_product_pricing`, same model, `payment_method="pix"` | R$ 323.10 unchanged; no extra discount. | 101.95 s |
+| R$ 340 budget | Fresh `get_product_pricing`, same model | Confirmed that R$ 323.10 fits the budget. | 140.06 s |
+
+All **11 structural checks passed**. Each turn executed a source lookup and returned its result to the actual model. The first answer's original-price line was added by Python, explicitly tagged in the trace. The second turn needed the bounded verification reminder before calling the pricing tool; it used three model requests. Turns 1 and 3 used two requests each. No extra PIX discount, promotion expiry date or purchase action was claimed. Manual review accepted the commercial facts and budget outcome.
+
+The second reply's "Se quiser economizar" sentence is awkward and potentially confusing, since PIX offers no extra saving on this promotion. Repeated suggestions and emojis also need refinement. Accordingly this is a **functional price/discount acceptance**, not a full persona/quality pass. Reasoning still appeared despite `think=False` and was filtered rather than published. The high individual response times remain a material limitation.
+
+Artifacts: [actual bilingual conversation](../examples/03_promotion_pix_budget.md) and [full answer/tool evidence without reasoning](../examples/03_promotion_pix_budget.json).
+
+## Catalog regression after adding pricing
+
+The catalog acceptance script was rerun because search results now include final-price fields and the model has a third tool. Recorded at **2026-11-02 17:06:06 -03:00**, the eight structural checks passed in **136.77 seconds**: the model queried available acoustic guitars up to R$ 1,000, received six of 12 matching records and displayed three matching names/prices (Tagima R$ 429.90, Rozini R$ 459.90, Shelby R$ 549.00).
+
+Manual review again found persona/grounding defects: an unsolicited beginner assumption, an unsupported "three best" ranking and an opening nylon-string description despite the third suggestion having steel strings. This is a successful **source/filter/price regression**, not an overall factuality or persona pass. The observed answer is preserved in [catalog-after-pricing evidence](evidence/catalog_after_pricing.json); these text-quality issues remain unresolved.
+
+## Current remaining work
+
+Three distinct observed conversations are now recorded: catalog, returns and promotion/PIX/budget. This meets the example count's lower bound, but does not establish complete challenge coverage. Still pending: an explicit final decision on order consultation and access verification; out-of-scope, error and broader factuality/persona evaluation; latency/reasoning improvements; final clean setup, English documentation/submission materials and repository freeze after submission. Freight and installment calculations are not implemented. No final submission has been performed.
