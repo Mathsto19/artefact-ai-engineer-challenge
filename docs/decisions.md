@@ -1,6 +1,6 @@
 # Zubumafu - Architecture Decision Record
 
-Status: catalog, policies, promotion/PIX pricing and demonstrative orders integrated. Final behavioral validation and submission review are pending. See [validation](validation.md) for observed results.
+Status: catalog, policies, promotion/PIX pricing, demonstrative orders and the persistent conversation interface integrated. Final packaging and visual review are pending. See [validation](validation.md) for observed results.
 
 ## Scope and sources
 
@@ -9,12 +9,12 @@ The prototype assists customers of Empório da Música using the supplied CSV da
 ## Technology choices
 
 - Primary language: Python.
-- Interface: Streamlit text chat with session reset and expandable tool evidence.
+- Interface: Streamlit text chat with separate persistent threads, scoped deletion and expandable tool evidence.
 - Local LLM runtime: Ollama 0.40.13 (verified on the developer's Windows laptop).
 - Initial model candidate: `qwen3:4b`, verified to load on the laptop with 100% GPU reported by `ollama ps`. Individual quality/latency observations are recorded in the validation log; no benchmark is claimed.
 - Fallback/experiment: compare `qwen3:8b` only if resource usage is acceptable.
 - Retrieval: deterministic Python functions for CSV data and section-based retrieval from the original store-policy PDF with pypdf 6.21.4.
-- Conversational context: in-memory session history, no durable persistence in the initial version.
+- Conversational context: separate local SQLite threads in the current interface; only the last 12 prior messages are sent to the model.
 - Tests: standard-library `unittest`, rather than the initially proposed pytest. The offline suite now uses pypdf to exercise the actual policy document; it does not need a running model or API access.
 - Dependency versions: top-level packages plus resolved constraints are pinned to the locally installed environment (Windows, Python 3.12.10).
 
@@ -48,7 +48,7 @@ The budget is applied **after** eligible discounts. This makes the R$ 359 Kalani
 
 The dedicated tool accepts an exact ID or resolves a product name, preferring an exact name over partial matches. Missing/ambiguous names do not yield a price; malformed IDs cannot be silently truncated to another product. Its trace exposes product ID, calculation and source files. General payment rules still use the PDF. Specific product/PIX follow-ups require a fresh catalog or pricing lookup, retaining recent context through heuristic routing. The model remains responsible for choosing the correct product and explaining the returned price; this is not a universal factuality validator. Freight, installments and historical order totals are outside this increment.
 
-An actual first trial omitted the original price and tried to answer the budget follow-up without a new lookup. The guard blocked that last answer. Python now completes missing original/percentage/final fields for a single-model promotional quote from verified tool facts, retaining the model draft and recording the added fields. A first response with no required lookup gets one verification reminder; the total limit remains three model requests. This bounded recovery does not authorize a source-free answer and can add latency. Full claim verification and general product-reference resolution remain future work.
+An actual first trial omitted the original price and tried to answer the budget follow-up without a new lookup. The guard blocked that last answer. The pricing milestone initially completed missing original/percentage/final fields while retaining the model draft; the quality increment below supersedes that partial supplement with full source rendering. A first response with no required lookup gets one verification reminder; the total limit remains three model requests. This bounded recovery does not authorize a source-free answer and can add latency. Full claim verification and general product-reference resolution remain future work.
 
 ## Demonstrative order increment
 
@@ -57,6 +57,20 @@ The selected scope is read-only historical order consultation. `get_order_status
 The number/email comparison is explicitly demo-only, not production authentication. Existing and nonexistent numbers produce the same missing-email question; a nonexistent order and a mismatching email produce the same generic denial. The agent additionally binds tool arguments to facts in customer messages, preventing a model guess or assistant-invented email from satisfying verification. A changed order resets the email, and a subject change closes the narrow flow. These phrase/regex rules are conservative, not a general identity or conversation-state engine. IDs such as `1.5` or `1e0` cannot be truncated to a valid order.
 
 The tool response still reaches the model, but the order-specific draft is discarded. Python renders only verified fields or the structured clarification/denial. Trace metadata records `python_order_result_template` without the email. When credentials are incomplete and the model answers without a tool, the application asks the next missing field without checking order existence. No model-requested lookup is claimed for that case. The customer's email remains in local session history and configured model requests; saved acceptance evidence redacts it. No new infrastructure or runtime dependency was added. Production authentication, rate limiting and secure real-customer data hosting are future work.
+
+## Quality and messaging-interface increment
+
+Observed model drafts assumed a beginner profile, added unsupported rankings and described mixed nylon/steel lists incorrectly. Catalog and price replies now use deterministic source renderers after the tool/model round-trip, complementing the existing controlled order and return-clarification paths. The trace identifies their origin. Source product names remain intact, including labels such as "Estudante"; string type comes from each instrument's specifications. This trades free-form recommendation prose for predictable commercial facts. General musical/policy prose is not universally validated.
+
+No-result classification distinguishes literal name absence from category, availability, budget and unconfirmed-price constraints. A model-chosen wrong category cannot establish that a named product is absent from the entire catalog. A real failed pricing trial motivated limiting advertised tools by recognized intent, binding an explicit PIX request to the calculation with trace metadata, and retaining one verification repair even after a truncated source-free draft. A single explicit BRL budget is compared in Python; ambiguous multiple amounts are not guessed. These remain heuristic conversation controls, not general semantic understanding.
+
+The interface separates personal chats and seven validation prompt templates. Templates contain no fabricated answers and start with no messages. SQLite stores each exchange atomically under a unique thread ID, supports scoped deletion and survives process restart. Connections are explicitly closed after transaction completion, which matters for Windows file locks. Only selected, email-redacted provenance metadata is saved in traces; raw tool payloads/reasoning are excluded. Original message content remains unencrypted. Local history is ignored by Git; deleting a conversation is logical deletion, not forensic erasure. This is for one trusted computer, without production accounts or authorization.
+
+`app.py` calls `main()` on every rerun. Import-only UI initialization would disappear on later Streamlit reruns because Python caches imported modules. AppTest exercises interaction state and persistence without a browser. It cannot establish CSS correctness, responsive layout or mobile usability. Browser discovery and the explicitly requested Edge connection were unavailable; the user then deferred that review. No visual approval is claimed.
+
+Repeated actual steel-string follow-up trials skipped the required new lookup. For a narrow "which of these" string-type question, the controller now re-queries only the names displayed in the last controlled catalog reply, carrying the prior budget/payment method, and filters the returned source specifications. Names from history are lookup keys, never evidence for prices or string types. This path makes no model call and records `invoked_by: application_reference_lookup`. It is a bounded reference resolver, not general dialogue understanding or a model tool-call demonstration.
+
+An actual unavailable-endpoint trial exposed SDK `httpx.RequestError` exceptions escaping the earlier built-in connection-error handler. The client boundary now maps SDK transport/response errors to the existing recoverable backend failure. The customer sees no internal endpoint or traceback.
 
 ## Persona
 
@@ -67,8 +81,8 @@ Zubumafu is friendly, patient, musically knowledgeable, professional, and warm w
 - Broader real-model grounding, out-of-scope behavior and latency evaluation.
 - Human-confirmed interpretations of ambiguous policy rules before implementing their calculations.
 - Production authentication/authorization for any use with real customer records; the implemented order/email match is only demonstrative.
-- Behavior on missing records, tool errors and out-of-scope questions.
-- Final README, 3-5 observed conversations covering distinct scenarios, and final submission. The public repository already exists.
+- Broader adversarial and dialogue testing beyond the recorded missing-record/error/out-of-scope scenarios.
+- Final clean-install check, English documentation/example selection and submission PDF. Four distinct observed conversations and the public repository already exist; no submission has occurred.
 
 ## Sources
 

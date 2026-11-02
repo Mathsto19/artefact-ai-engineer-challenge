@@ -22,7 +22,7 @@ class PricingAgentTests(unittest.TestCase):
             return SimpleNamespace(message=SimpleNamespace(content="Continua em R$ 323,10: os descontos não são cumulativos.", tool_calls=[]))
 
         reply, trace = respond("E pagando no PIX, fica mais barato?", self.history, chat_fn=chat)
-        self.assertIn("não são cumulativos", reply)
+        self.assertIn("não acumula", reply)
         self.assertEqual(trace[0]["product_id"], "127")
         self.assertEqual(trace[0]["status"], "ok")
         self.assertEqual(calls[0]["messages"][1:3], self.history)
@@ -53,7 +53,7 @@ class PricingAgentTests(unittest.TestCase):
         self.assertEqual(trace[0]["status"], "ok")
         self.assertIn("Não consegui confirmar", reply)
 
-    def test_missing_promotion_fields_are_completed_from_catalog_source(self):
+    def test_promotion_quote_is_rendered_entirely_from_catalog_source(self):
         calls = []
 
         def chat(**kwargs):
@@ -64,11 +64,11 @@ class PricingAgentTests(unittest.TestCase):
             return SimpleNamespace(message=SimpleNamespace(content="O preço final é R$ 323,10.", tool_calls=[]))
 
         reply, trace = respond("Quanto custa o Kalani KAL-700T?", chat_fn=chat)
-        self.assertIn("Preço de tabela: R$ 359,00.", reply)
-        self.assertIn("Promoção ativa: 10%.", reply)
-        self.assertIn("O preço final é R$ 323,10.", reply)
-        self.assertEqual(trace[0]["added_price_fields"], ["list_price", "discount_percent"])
-        self.assertEqual(trace[0]["reply_origin"], "model_with_source_price_details")
+        self.assertIn("tabela: R$ 359,00", reply)
+        self.assertIn("desconto de 10%", reply)
+        self.assertIn("R$ 323,10", reply)
+        self.assertNotIn("O preço final é R$ 323,10.", reply)
+        self.assertEqual(trace[0]["reply_origin"], "python_catalog_result_template")
 
     def test_missing_lookup_is_repaired_within_existing_request_limit(self):
         calls = []

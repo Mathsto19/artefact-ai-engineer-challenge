@@ -1,6 +1,6 @@
 # Development handoff
 
-Catalog, policies, promotion/PIX pricing and demonstrative order lookup are implemented. This is not the finished Artefact submission.
+Catalog, policies, promotion/PIX pricing, demonstrative order lookup and the persistent messaging interface are implemented. This is not the finished Artefact submission.
 
 ## Repository continuity
 
@@ -12,7 +12,7 @@ The existing first commit (`3c89eec`) and the prototype commits (`fe3745b`, `992
 
 ## Implemented
 
-- Streamlit chat, session history, conversation reset and tool evidence.
+- Streamlit chat with separate personal/test threads, local SQLite persistence, scoped deletion and tool evidence.
 - Local Ollama client with configurable host/model/timeout.
 - Bounded tool calling with `think=False` requested and final-content safeguards.
 - Read-only `search_products` over the original product/category CSVs.
@@ -26,7 +26,12 @@ The existing first commit (`3c89eec`) and the prototype commits (`fe3745b`, `992
 - `get_product_pricing` calculates original, promotional and final prices with `Decimal`; active promotions do not stack with PIX.
 - Catalog budgets and ordering use the final eligible price, with explicit original/final fields and a configurable payment method.
 - A separate three-turn acceptance script exercises a product quote, PIX follow-up and budget comparison with the actual model.
-- Missing fields in a single-model promotional quote are completed from tool facts with explicit trace metadata; a skipped fresh lookup has one bounded verification retry.
+- Catalog and pricing replies use complete source-based renderers with explicit trace metadata; a skipped fresh lookup has one bounded verification retry. This supersedes the earlier partial price-field supplement.
+- Per-product nylon/steel descriptions, no assumed beginner profile or unsupported ranking, and distinct unknown/unavailable/budget outcomes.
+- A narrow string-type follow-up re-queries the previously displayed names under the prior budget, without a model call; `application_reference_lookup` identifies its origin.
+- Seven validation prompt templates start empty and invoke the backend only when requested; they contain no pre-recorded answers.
+- SQLite writes exchanges atomically, closes connections explicitly and whitelists/redacts stored trace metadata. Original messages remain unencrypted on the trusted local computer.
+- Streamlit rerun, restart, thread isolation, scenario launch and scoped-deletion checks using AppTest; these do not establish visual correctness.
 - `get_order_status` checks the order/customer/email association, preserves historical totals and excludes customer/internal fields.
 - Agent-level order arguments are bound to customer-provided facts; assistant text and guessed credentials cannot authorize disclosure.
 - Order replies are rendered from structured Python results after the tool/model round-trip. The trace records this controlled origin without the email.
@@ -36,15 +41,15 @@ See [validation.md](validation.md) for the actual evidence and its limits. A sim
 
 The pricing milestone passed 61 offline tests and its actual three-turn source/price checks, recorded in `examples/03_promotion_pix_budget.{md,json}`. The order milestone extends that suite to 89 tests, preserving the earlier regressions. The actual order conversation and two denial cases passed 16 structural checks; see the latest validation section for observed behavior, timings and limitations. Controlled price/return/order replies are application safeguards; do not attribute them entirely to the model. Example count alone is not final acceptance.
 
-## Next increment
+## Final packaging
 
-1. Review factuality/persona and out-of-scope/error behavior, keeping recorded observations distinct from expected results.
-2. Keep unresolved contacts, installment thresholds and the exact R$ 500 freight boundary explicit; do not silently turn them into automatic decisions.
-3. Keep the selected order consultation explicitly demonstrative and read-only; stronger authentication belongs to future production work.
-4. Complete out-of-scope/error handling and the chosen acceptance matrix. Return clarification phrase matching is not a general eligibility engine.
-5. Review the recorded conversations for final coverage and add scenarios where needed; check clean setup and final submission materials.
+1. Verify a clean installation and review the English README, architecture decisions and final example selection against the original challenge.
+2. Prepare the submission PDF and confirm the official submission instructions/deadline. Do not submit the application without Matheus's explicit instruction.
+3. Keep visual review explicitly pending: no browser was connected and the user deferred Edge setup. AppTest is functional evidence only.
+4. Keep unresolved contacts, installment thresholds and the exact R$ 500 freight boundary explicit; do not turn them into automatic decisions.
+5. Keep order consultation demonstrative/read-only and local history unencrypted; stronger authentication and secure real-customer storage are future production work.
 
-The known reasoning/latency limitation should also be reevaluated with measured evidence. Do not expand the project with multi-agent orchestration or additional infrastructure unless a concrete requirement warrants it.
+The quality/UI integration passed 119 offline tests, including the preceding 89, and separate actual model acceptance is recorded in the latest validation section. The known reasoning/latency limitation remains; isolated timings are not performance benchmarks. Do not expand the project with new infrastructure or features during packaging.
 
 ## Continue between platforms
 

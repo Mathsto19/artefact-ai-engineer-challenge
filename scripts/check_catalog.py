@@ -85,6 +85,14 @@ def main() -> int:
         "answer_mentions_a_retrieved_product": any(product["name"].casefold() in answer.casefold() for product in products),
         "answer_has_no_thinking_markup": "<think" not in answer.casefold() and "</think" not in answer.casefold(),
         "all_requests_use_think_false": all(call["think_requested"] is False for call in calls),
+        "neutral_customer_profile_and_ranking": "iniciante" not in answer.casefold() and "melhores" not in answer.casefold(),
+        "displayed_names_prices_and_string_types_match": bool(products) and all(
+            any(product['name'] in line and product['final_price_display_brl'] in line
+                and ({'nylon': 'cordas de nylon', 'steel': 'cordas de aço'}.get(product['specs'].get('strings'), '') in line)
+                for line in answer.splitlines())
+            for product in products[:3]
+        ),
+        "catalog_reply_origin_is_explicit": any(item.get('reply_origin') == 'python_catalog_result_template' for item in trace),
     }
     report = {
         "recorded_at": datetime.now(timezone(timedelta(hours=-3))).isoformat(timespec="seconds"),

@@ -10,7 +10,8 @@ def create_chat():
     Settings are process environment variables; no .env file is loaded.
     The import remains lazy so data-only unit tests do not require the SDK.
     """
-    from ollama import Client
+    from ollama import Client, ResponseError
+    from httpx import RequestError
 
     timeout = float(os.environ.get("OLLAMA_TIMEOUT_SECONDS", "120"))
     if not math.isfinite(timeout) or timeout <= 0:
@@ -19,4 +20,10 @@ def create_chat():
         host=os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"),
         timeout=timeout,
     )
-    return client.chat
+    def chat(**kwargs):
+        try:
+            return client.chat(**kwargs)
+        except (RequestError, ResponseError) as exc:
+            raise ConnectionError("Unable to complete the local model request") from exc
+
+    return chat

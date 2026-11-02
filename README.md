@@ -2,7 +2,7 @@
 
 **Status: early functional prototype; not ready for delivery.**
 
-Zubumafu is an experimental text-based customer assistant for **Empório da Música**, the fictional music store in Artefact's AI Engineer challenge. It speaks Brazilian Portuguese with a warm, musical and professional personality. The current milestone offers catalog searches, retrieval from the original store-policy PDF, deterministic promotion/PIX pricing and demonstrative order consultation. Tool results are returned to the model; verified chapter/page references are appended to policy replies. Final quality and submission review remain pending.
+Zubumafu is an experimental text-based customer assistant for **Empório da Música**, the fictional music store in Artefact's AI Engineer challenge. It speaks Brazilian Portuguese. The current milestone offers catalog searches, original-PDF policy retrieval, deterministic promotion/PIX pricing and demonstrative order consultation, with a messaging-style interface and local conversation history. The model requests tools and receives their results; catalog, price and order facts are rendered by Python. Final visual and submission review remain pending.
 
 ## Stack and rationale
 
@@ -12,7 +12,7 @@ Zubumafu is an experimental text-based customer assistant for **Empório da Mús
 | Streamlit | Small chat UI without a separate frontend application. |
 | Ollama + `qwen3:4b` | Runs without an API key or per-request fee on the developer's laptop. This is a candidate, not a quality benchmark. |
 | Python tool calling | CSV filtering stays in code while the model handles intent and language. |
-| Session-only memory | Enough for a prototype without the overhead of storing conversation histories. |
+| Local SQLite history | Saves separate personal/test conversations on one trusted computer, using Python's standard library. |
 | Policies by document sections | `pypdf` extracts the supplied manual's chapters with page references; a vector database is unnecessary for this eight-page source. |
 | `Decimal` pricing | Python applies eligible discounts, rounds BRL amounts and compares the final price with the budget. |
 
@@ -35,7 +35,11 @@ py -3.12 -m venv .venv
 
 Open the local URL printed by Streamlit, normally `http://localhost:8501`. Calling the virtual environment's Python directly avoids PowerShell activation-policy issues. Keep the Ollama application running. If `ollama` is not recognized after installation, reopen the terminal.
 
-Ask **"Quais violões disponíveis custam até R$ 1000?"**. Expand **"Consultas realizadas"** to inspect the executed tool, filters, source and number of matches. Use **"Nova conversa"** to reset the session.
+Ask **"Quais violões disponíveis custam até R$ 1000?"**. Expand **"Fontes e ferramentas consultadas"** to inspect source/filter/reference metadata. Use **"＋ Nova conversa"** to create an independent thread; select a sidebar title to reopen an earlier one. **"Excluir"** asks for confirmation and deletes only that thread.
+
+The interface is inspired by messaging applications; it is not a WhatsApp integration. The sidebar separates personal conversations from test conversations. Seven built-in validation scenarios supply prompts and expected criteria. A new test thread starts empty: answers appear only when a prompt is executed, and the scenario is not automatically marked as passed.
+
+**Local-history privacy:** messages, including emails typed for a demo order, are stored unencrypted in `.local/conversations.sqlite3`. Titles redact emails; saved traces use a metadata whitelist and exclude raw tool payloads and reasoning. The folder and SQLite files are ignored by Git. This is a single-user demonstration, without accounts or production authentication. Use a trusted machine. Chat deletion is logical database deletion, not guaranteed forensic erasure from disk or backups. History created in this interface survives application/process restarts; earlier memory-only sessions are not automatically imported.
 
 For policy retrieval, ask **"Comprei um violão e me arrependi. Posso devolver?"** and then **"Foi online."**. Expected behavior: consult section 4, page 4; ask for the purchase channel first, then the actual receipt date, and avoid approving a return with incomplete information. Other useful questions concern store hours, the address, installment conditions and delivery for exactly R$ 500. Expected behavior is distinct from the observed evidence linked above.
 
@@ -79,6 +83,14 @@ Run the separate order-number/email conversation and unsuccessful verification c
 
 The script uses supplied demo order 11, checks the historical total and absent tracking/date fields, and compares denials for a wrong email and a nonexistent order. It reads the matching demo email locally and redacts all emails from the saved evidence and terminal output. Order results and the model's discarded reasoning are distinct: the application renders order replies from verified Python fields, not from the model draft.
 
+Run the additional quality scenarios:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_quality.py --output tmp/quality-smoke.json
+```
+
+This checks neutral catalog wording and string types, a steel-string follow-up, unavailable/unknown products, an off-topic redirect and recovery from an unavailable local model endpoint. Off-topic requests can be redirected without a model call. Review individual outputs and source filters; these scenarios do not establish universal reliability.
+
 ### Optional configuration
 
 | Environment variable | Default | Purpose |
@@ -86,6 +98,7 @@ The script uses supplied demo order 11, checks the historical total and absent t
 | `OLLAMA_MODEL` | `qwen3:4b` | Installed local model to request. |
 | `OLLAMA_HOST` | `http://127.0.0.1:11434` | Local Ollama endpoint. |
 | `OLLAMA_TIMEOUT_SECONDS` | `120` | Positive, finite HTTP timeout in seconds. |
+| `ZUBUMAFU_HISTORY_PATH` | `.local/conversations.sqlite3` under the project root | Alternate local SQLite history path; useful for isolated UI tests. |
 
 Set variables in the terminal before starting the app, for example `$env:OLLAMA_TIMEOUT_SECONDS = "120"`. No `.env` file is automatically loaded. No API key is required for the default local configuration.
 
@@ -93,7 +106,11 @@ Set variables in the terminal before starting the app, for example `$env:OLLAMA_
 
 | Path | Responsibility |
 | --- | --- |
-| `app.py` | Streamlit chat, session history, tool evidence and recoverable error messages. |
+| `app.py` | Calls the UI entry point on every Streamlit rerun. |
+| `zubumafu/streamlit_ui.py` | Messaging layout, thread selection/deletion, scenario buttons and source evidence. |
+| `zubumafu/conversations.py` | Atomic SQLite exchanges, independent thread IDs, safe trace metadata and scoped deletion. |
+| `zubumafu/demo_scenarios.py` | Seven prompt/criteria templates, without seeded or fabricated answers. |
+| `zubumafu/response_quality.py` | Source-based catalog/price presentation, explicit budget comparison and bounded output cleanup. |
 | `zubumafu/agent.py` | Bounded model/tool loop and customer-facing output handling. |
 | `zubumafu/model.py` | Lazy SDK import, local endpoint and timeout configuration. |
 | `zubumafu/persona.py` | Persona, scope and instructions to use verified store facts. |
@@ -106,6 +123,7 @@ Set variables in the terminal before starting the app, for example `$env:OLLAMA_
 | `scripts/check_policies.py` | Opt-in two-turn return-policy acceptance check against the actual local model. |
 | `scripts/check_pricing.py` | Opt-in three-turn promotion, PIX and budget acceptance check against the actual local model. |
 | `scripts/check_orders.py` | Opt-in order dialogue and unsuccessful-verification checks; evidence redacts emails. |
+| `scripts/check_quality.py` | Opt-in quality scenarios and actual unavailable-endpoint recovery. |
 | `docs/` | Decisions, observed validation and the next development steps. |
 | `examples/` | Recorded interactions as they are validated; final coverage is pending. |
 | `data/` | Original supplied datasets and store policies. |
@@ -119,7 +137,11 @@ Set variables in the terminal before starting the app, for example `$env:OLLAMA_
 
 Only `is_active` determines promotion activity: the source has no campaign dates, so the assistant cannot promise expiry dates. Prices and sources are visible in the expandable tool evidence. This feature does not calculate installment schedules, freight, cart totals or historical order prices.
 
-If a single-model promotional quote omits the original price, percentage or final price, Python adds the missing fields from the successful tool result. The trace marks `reply_origin: model_with_source_price_details` and `added_price_fields`. This checks completeness; it does not validate every claim in the model draft. When the first model reply skips a required fresh lookup, one verification reminder can request that lookup within the existing three-request limit. If verification still fails, the customer receives a fallback.
+Catalog and pricing replies now use structured Python renderers after the real model/tool round-trip. They replace the draft, rather than supplementing missing fields as earlier milestones did. Trace origins are `python_catalog_result_template` and `python_pricing_result_template`. Catalog suggestions retain source names and distinguish nylon/steel per instrument, without inferring the customer's experience or claiming a quality ranking. Source filters distinguish an unknown name from unavailable inventory, budget/category constraints and unconfirmed pricing. A missing or ambiguous product price asks for clarification. This favors predictable factual output over unconstrained musical recommendation prose.
+
+Recognized intents limit the tools advertised to the model. A single-product price/PIX/budget question advertises the pricing tool; general product-list questions can use catalog search. A literal request to pay via PIX sets that method in the deterministic calculation if the model omitted it, with `argument_overrides` in the trace. Intent routing, payment phrase matching and explicit BRL budget parsing remain narrow heuristics. A skipped fresh lookup gets one verification reminder, including after a source-free truncated draft, within the same three-request cap. Repeated failure returns a fallback rather than an invented answer.
+
+A narrow follow-up such as "Which of these options have steel strings?" is resolved by the application: it re-queries only the up to three names displayed in the previous controlled catalog reply, carrying the previous budget/payment method, and filters the current source specifications. It makes no model request. The trace explicitly records `invoked_by: application_reference_lookup`; this is not presented as model-requested tool use or general reference understanding.
 
 Price and stock values are from the supplied snapshot, not a live commerce integration. All seven original files under `data/` were preserved byte for byte when importing the prototype increments.
 
@@ -133,7 +155,7 @@ For an explicit regret conversation with missing purchase information, Python co
 
 The agent binds order-tool arguments to credentials supplied in customer messages in the current narrow order flow. Assistant text and model guesses cannot supply missing credentials. A new order number clears the previous email; changing subject closes the flow. This is heuristic context handling, not a general identity system. Order number plus email is **demo-only verification, not production authentication**. The original sources are supplied demonstration data in a public challenge repository; do not use this design for real customer records.
 
-After the tool result is returned to the model, Python renders the order response or denial and discards the model draft, marking `reply_origin: python_order_result_template`. A missing-credential question may also be supplied directly when the model makes no tool call; that is not recorded as a model-requested lookup. Missing carrier codes/dates remain absent; historical forecasts do not prove actual receipt or promise a current delivery. No live tracking, cancellations, refunds or record mutations are available. The interface trace excludes the email, but the customer's original message remains in session memory and is sent to the configured Ollama endpoint. Order CSV reads are cached; restart after changing the files.
+After the tool result is returned to the model, Python renders the order response or denial and discards the model draft, marking `reply_origin: python_order_result_template`. A missing-credential question may also be supplied directly when the model makes no tool call; that is not recorded as a model-requested lookup. Missing carrier codes/dates remain absent; historical forecasts do not prove actual receipt or promise a current delivery. No live tracking, cancellations, refunds or record mutations are available. The interface trace excludes the email, but the original customer message is stored in the unencrypted local history and sent to the configured Ollama endpoint. Order CSV reads are cached; restart after changing the files.
 
 No external source is used for store facts. General musical knowledge may assist in explanations; specific claims about artists or equipment are not verified by this dataset and must not be invented.
 
@@ -144,8 +166,9 @@ No external source is used for store facts. General musical knowledge may assist
 - The installed Qwen3 4B template emitted reasoning despite requests with `think=False`. The application also uses `/no_think` as a steering instruction and strips labeled reasoning from visible content. This is an output safeguard, not proof that reasoning generation was disabled. Latency remains a limitation.
 - Each reply is bounded to three model requests, five tools per request, 2,048 generated tokens per request and a 4,096-token context. The visible history includes at most 12 previous messages in each request; long conversations can exceed the context budget. Truncated model drafts produce a fallback; verified order replies can still be safely rendered from the completed tool result.
 - Source-intent checks are heuristic. Policy questions require the PDF tool; product prices require a fresh catalog or pricing lookup. A general policy lookup alone cannot authorize a specific product quote. Return follow-ups about channel/receipt retain their policy context; price/PIX follow-ups use recent conversation context. The code does not yet verify every generated factual statement, product reference or model-written citation against tool results.
-- The first observed answer focused on beginners even though the customer had not specified experience. Persona instructions discourage this assumption, but instructions alone do not guarantee compliance.
-- The interface provides only demonstrative order/email matching, without production authentication, rate limits or durable persistence. Context heuristics can miss phrasing; start a new conversation or restate the order number when necessary.
+- Historical catalog runs assumed a beginner profile and mixed nylon/steel descriptions. Controlled product replies address those particular errors; general musical and policy prose still needs broader evaluation. Historical transcripts are retained as observed evidence, not rewritten to suggest the fixes existed earlier.
+- The interface provides local durable history and demonstrative order/email matching, without production authentication or rate limits. Context heuristics can miss phrasing; start a new conversation or restate the order number when necessary.
+- Streamlit AppTest checks interaction state, not CSS, real-browser responsiveness or mobile appearance. Visual review remains pending because no browser was connected; the user deferred the Edge connection.
 - Conflicting contacts and installment rules, and the missing exact R$ 500 freight case, are explicitly flagged. The prototype does not resolve those policies or approve, reject or register return requests.
 - Monetary values use the static CSV source. Do not claim live stock or external tracking.
 - Tool errors, prompt injection and out-of-scope behavior require further hardening and testing.
@@ -156,7 +179,7 @@ Automated grounding checks, broader dialog evaluation, latency improvements and 
 
 ## AI assistance disclosure
 
-ChatGPT (OpenAI) assisted with planning, architecture decisions, drafting the initial Python code/tests and the policy/pricing/order increments, and reviewing documentation. Codex assisted with the original material review and repository setup, integrated the prototype history and subsequent increments into the existing repository, preserved and extended the regression tests, bound order lookups to customer-provided credentials, corrected tool/output handling, and ran local model and interface checks. The local inference model is Qwen3 4B via Ollama. Recorded validation distinguishes simulated model tests from real requests; example conversations must not be fabricated.
+ChatGPT (OpenAI) assisted with planning, architecture decisions, drafting Python code/tests and the policy/pricing/order/quality/UI increments, and reviewing documentation. Codex integrated those older snapshots into the canonical repository, preserved/extended regressions, bound order credentials and explicit PIX requests, corrected source/output handling and SQLite/Streamlit integration, and ran local model and AppTest checks. The local inference model is Qwen3 4B via Ollama. Recorded validation distinguishes simulated tests, actual model requests, controlled application replies and the pending browser review; conversations are not fabricated.
 
 ## Submission checklist (not yet completed)
 

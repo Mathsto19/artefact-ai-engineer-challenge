@@ -34,3 +34,9 @@ Thumbs.db
 tmp/
 zubumafu-prototipo-inicial*.zip
 zubumafu-orders-increment*.zip
+zubumafu-final-quality-ui-increment*.zip
+.local/
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm

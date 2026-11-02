@@ -225,6 +225,57 @@ The actual two-turn return-policy scenario was rerun because the fourth tool and
 
 A separate offline regression verifies that "Me arrependi do meu pedido. Posso devolver?" stays in the PDF/return clarification flow despite mentioning an order. The narrow order context must not replace that established behavior with an unnecessary request for order credentials.
 
-## Current remaining work
+## Remaining work recorded after the order milestone
 
 The selected functional scope now includes catalog, policies, promotions/PIX and demonstrative orders. Four distinct conversations are recorded; denial cases supplement the order example. Stop adding features and complete the final review: factuality/persona defects in catalog prose, broader out-of-scope/error behavior, latency/reasoning limits, clean setup, final English documentation and submission materials. Order verification remains demo-only; freight/installment calculations are excluded. No submission or repository freeze has occurred.
+
+## Quality/UI milestone - selective integration and offline verification
+
+The final-quality/UI ZIP was treated as an older baseline with a new increment. Archive CRC passed and all seven original data files matched the canonical sources by SHA-256. Existing policy/order protections, pinned dependencies, historical examples and Git history were retained. The package's 57-test result belongs to its own baseline, not the canonical checkout.
+
+The integrated suite passed **119 offline tests**, including the preceding 89 regressions. Coverage includes source-based catalog/price rendering, neutral customer experience, per-record nylon/steel descriptions, no discount stacking, ambiguous prices, distinct no-result reasons, explicit PIX binding, bounded recovery after a truncated source-free draft, SDK transport failures, and reference filtering. Persistence checks cover atomic exchanges, separate threads, redacted/whitelisted trace metadata, logical scoped deletion and reopening the database from another Python process.
+
+Streamlit AppTest verifies reruns, switching threads, reopening the app, personal/test isolation, cancel/confirm deletion, prompt-template launch, retained PDF evidence and saved backend-failure replies. These interface tests use a simulated backend, not Qwen3. The incoming import-only entrypoint was corrected to call `main()` on each rerun, and SQLite connections now close explicitly after each transaction. No new runtime dependencies were added; `pip check` passed.
+
+### Actual trials and corrections
+
+The original local `qwen3:4b` was retained. Initial pricing trials were rejected: the model guessed the wrong instrument category, omitted the explicit PIX method, or produced a truncated source-free follow-up. Intent-specific advertised tools, customer-bound PIX arguments, category-guess correction and the bounded verification retry addressed those observed paths. Catalog/price replies now discard the model draft and render the verified commercial fields in Python; this supersedes the earlier partial price supplement. Trace metadata identifies the controlled origin.
+
+A steel-string continuation initially skipped the fresh lookup and introduced unrelated recommendations. A subsequent trial safely declined but still did not satisfy the continuation. The final implementation resolves only the names in the previous controlled catalog list, re-queries the source under the previous budget/payment method, and filters actual string specifications directly. This narrow branch makes **no model call** and records `invoked_by: application_reference_lookup`; it is not counted as independent model tool-use success.
+
+An actual unavailable-endpoint test also exposed an SDK transport exception escaping the earlier handler. Mapping SDK transport/response exceptions at the client boundary restored a safe recoverable reply. The test did not stop the running Ollama server.
+
+### Actual pricing regression
+
+Recorded at **2026-11-02 19:33:07 -03:00**: all **11 structural checks passed**. The actual model requested fresh pricing results on all three turns and received those results back. Python displayed R$ 359.00 original, 10% promotion and R$ 323.10 final; PIX retained R$ 323.10 without an additional discount; R$ 323.10 explicitly fit the R$ 340 budget. Turns took **31.45, 23.75 and 47.63 seconds**. See [pricing after quality](evidence/pricing_after_quality.json).
+
+### Accepted quality scenarios
+
+Command: `.\.venv\Scripts\python.exe scripts/check_quality.py --output tmp/quality-accepted.json`.
+
+Recorded at **2026-11-02 19:49:26 -03:00** (22:49:26 UTC in the artifact): all **nine scenario checks passed**, followed by review against the actual records.
+
+| Scenario | Observed behavior | Elapsed |
+| --- | --- | --- |
+| Available acoustic guitars up to R$ 1,000 | Actual model requested catalog search and received its results; source renderer displayed Tagima R$ 429.90/nylon, Rozini R$ 459.90/nylon and Shelby R$ 549.00/steel, with stock and no beginner assumption/ranking. | 68.60 s |
+| Which of those have steel strings? | Direct application re-query retained only the previously displayed Shelby and the R$ 1,000 budget; no model request. | <0.01 s |
+| Shelby SN-7C 7 Cordas Nylon Natural | Actual model/tool cycle distinguished an existing but unavailable product from an unknown name. | 23.99 s |
+| Zubumafu X-999 | Actual model/tool cycle found no matching catalog name; no product/price invented. | 30.43 s |
+| Weather question | Brief application redirect to store/music scope, without model or commercial lookup. | <0.01 s |
+| Unavailable model endpoint | Actual SDK request failed; recoverable reply without endpoint/traceback. | 1.21 s |
+
+See [quality acceptance evidence](evidence/quality_ui_acceptance.json). Direct controller lookups and model-requested tools are identified separately. No model reasoning is published. The model still emitted reasoning despite `think=False`; isolated timings do not prove a general improvement. Narrow phrase/reference matching and controlled commercial replies do not establish universal dialogue grounding.
+
+### Policy regression after quality changes
+
+At **2026-11-02 19:50:48 -03:00**, the two-turn return-policy scenario passed all **11 checks** again. Both actual model/tool cycles retrieved chapter 4/page 4. The source-verified questions asked purchase channel and then actual receipt date, with no return approval or invented procedure. Turns took **35.66 and 35.32 seconds**. See [policy regression evidence](evidence/policies_after_quality.json).
+
+### Order regression after quality changes
+
+At **2026-11-02 19:52:49 -03:00**, the order dialogue and denial cases passed all **16 checks**. Missing credentials produced the order-number then email questions without disclosing details or claiming a lookup. After the customer's registered email, the actual model requested `get_order_status`, received its result, and Python displayed the verified order 11: confirmed, one Kalani and historical R$ 359.00 total, with no tracking/estimated delivery invented. Wrong email and nonexistent order produced identical generic denials. The three dialogue turns took **8.21, 6.35 and 10.96 seconds**; denial cases took **18.58 and 49.76 seconds**. Public evidence redacts emails. See [order regression evidence](evidence/orders_after_quality.json).
+
+### Visual review and final packaging
+
+No browser was connected. After an unsuccessful Edge connection attempt, the user explicitly deferred browser setup. AppTest is functional verification only: CSS, real-browser responsiveness and mobile appearance remain **unreviewed**. No visual approval is claimed.
+
+The selected implementation is ready for final packaging, subject to the documented limits. Remaining submission work: clean-install verification, final English README/decisions/example selection and the delivery PDF/channel/deadline check. SQLite history is local and unencrypted; original messages may include the customer-entered email. Order verification remains demonstrative. Freight/installment calculations and production authentication remain excluded. No application submission or repository freeze has occurred.

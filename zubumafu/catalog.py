@@ -91,14 +91,17 @@ def search_products(
     products, categories = _catalog()
     results: list[dict[str, object]] = []
     term = _normalize(query)
+    query_matches = source_matches = available_candidates = over_budget = unconfirmed_prices = 0
     for product in products:
         name = product["name"]
         description = product["description"]
         category_name = categories.get(product["category_id"], "Unknown")
-        if not _category_match(category, category_name):
-            continue
         if term and term not in _normalize(name + " " + description + " " + product["specs"]):
             continue
+        query_matches += 1
+        if not _category_match(category, category_name):
+            continue
+        source_matches += 1
         try:
             price = Decimal(product["price_brl"])
             stock = int(product["stock_quantity"])
@@ -106,10 +109,16 @@ def search_products(
             continue
         if available_only and (product["status"] != "active" or stock <= 0):
             continue
+        available_candidates += 1
         pricing = pricing_for_product(product, payment_method)
         # A missing/ambiguous final price cannot be advertised as within budget.
-        if budget and (pricing["status"] != "ok" or Decimal(pricing["final_price_brl"]) > budget):
-            continue
+        if budget:
+            if pricing["status"] != "ok":
+                unconfirmed_prices += 1
+                continue
+            if Decimal(pricing["final_price_brl"]) > budget:
+                over_budget += 1
+                continue
         try:
             specs = json.loads(product["specs"]) if product["specs"] else {}
         except json.JSONDecodeError:
@@ -141,6 +150,14 @@ def search_products(
         "pricing_note": "price_brl is the original price; budget filtering and ordering use final_price_brl. Only is_active indicates promotion activity; dates are unavailable. PIX does not stack with promotions. Do not quote a final price when pricing_status is not ok.",
         "filters": {"category": category, "query": query, "max_price_brl": str(budget), "budget_applies_to": "final_price_brl", "available_only": available_only, "payment_method": payment_method},
         "total_matches": len(results),
+        "no_match_reason": (
+            None if results else
+            "not_in_catalog" if not query_matches and term else
+            "no_category_match" if not source_matches else
+            "unavailable" if available_only and not available_candidates else
+            "unconfirmed_prices" if unconfirmed_prices else
+            "over_budget" if over_budget else "no_filters_match"
+        ),
         "shown_matches": min(len(results), 6),
         "products": results[:6],
     }

@@ -13,6 +13,8 @@ from .policies import search_store_policies
 from .pricing import get_product_pricing
 from .orders import bound_order_lookup, get_order_status, order_context, render_order_result
 from .persona import SYSTEM_PROMPT
+from .response_quality import (clean_model_answer, outside_scope, render_catalog, render_pricing,
+                               requested_budget, referenced_strings, lookup_referenced_strings)
 
 
 MODEL = "qwen3:4b"
@@ -31,6 +33,23 @@ def respond(
     The caller owns the visible conversation history. Ollama message objects and
     tool responses are local to this one call, not persisted between sessions.
     """
+    if outside_scope(user_message):
+        return "Meu foco é ajudar com instrumentos musicais e o atendimento do Empório da Música. Posso ajudar com algo da loja?", []
+    string_reference = referenced_strings(user_message, history or [])
+    if string_reference is not None:
+        # A narrow reference/filter operation is deterministic. Re-query real
+        # records without waiting for the model to repeat a known lookup.
+        try:
+            result = json.loads(lookup_referenced_strings(string_reference))
+            if 'error' in result:
+                raise ValueError('reference lookup failed')
+        except (TypeError, ValueError, OSError):
+            return "Não consegui consultar essas opções agora. Tente novamente, por favor.", [{'tool': 'search_products', 'status': 'error', 'invoked_by': 'application_reference_lookup'}]
+        proof = [{key: item[key] for key in ('product_id', 'name', 'category', 'final_price_brl', 'specs')} for item in result['products']]
+        return render_catalog(result), [{'tool': 'search_products', 'status': 'ok',
+            'source': result['source'], 'filters': result['filters'], 'matches': result['total_matches'],
+            'reference_products': proof, 'invoked_by': 'application_reference_lookup',
+            'reply_origin': 'python_catalog_result_template'}]
     if chat_fn is None:
         from .model import create_chat
 
@@ -42,17 +61,28 @@ def respond(
     trace: list[dict[str, object]] = []
     order_input = order_context(user_message, history or [])
     required_tool = "get_order_status" if order_input is not None else _required_tool(user_message, history or [])
+    if required_tool == "product_pricing":
+        single_price = not re.search(r"\b(quais|opcoes|modelos|instrumentos|violoes|guitarras)\b", _normalize(user_message))
+        tool_names = ["get_product_pricing"] if single_price else ["get_product_pricing", "search_products"]
+    elif required_tool in TOOLS:
+        tool_names = [required_tool]
+    else:
+        tool_names = list(TOOLS)
     order_result = None
+    catalog_result = pricing_result = None
 
     for attempt in range(TOOL_CYCLE_LIMIT):
-        response = chat_fn(
-            model=os.environ.get("OLLAMA_MODEL", MODEL),
-            messages=messages,
-            tools=list(TOOLS.values()),
-            think=False,
-            stream=False,
-            options={"temperature": 0.3, "num_ctx": 4096, "num_predict": 2048},
-        )
+        try:
+            response = chat_fn(
+                model=os.environ.get("OLLAMA_MODEL", MODEL),
+                messages=messages,
+                tools=[TOOLS[name] for name in tool_names],
+                think=False,
+                stream=False,
+                options={"temperature": 0.3, "num_ctx": 4096, "num_predict": 2048},
+            )
+        except (ConnectionError, TimeoutError, OSError):
+            return "Não consegui acessar o Ollama agora. Confira se ele está aberto e tente novamente.", trace
         message = response.message
         calls = getattr(message, "tool_calls", None) or []
         if not calls:
@@ -69,34 +99,37 @@ def respond(
                 # Missing credentials require only a question, never a lookup
                 # revealing whether an order exists. No model tool call claimed.
                 return render_order_result(json.loads(get_order_status(**order_input))), trace
-            content = _visible_content(getattr(message, "content", None) or "")
-            if getattr(response, "done_reason", None) == "length":
-                return "Não consegui concluir a resposta. Vamos tentar uma pergunta mais específica?", trace
-            if not content:
-                return "Não consegui preparar uma resposta agora. Tente novamente, por favor.", trace
             accepted_tools = ({"get_product_pricing", "search_products"}
                               if required_tool == "product_pricing" else {required_tool})
             confirmed_lookup = any(
                 item["status"] == "ok" and (required_tool is None or item["tool"] in accepted_tools)
                 for item in trace
             )
+            if required_tool in {None, "product_pricing", "search_products"}:
+                if pricing_result is not None and (confirmed_lookup or pricing_result.get("status") in {"missing_product", "not_found", "ambiguous_product"}):
+                    _mark_reply_origin(trace, "get_product_pricing", "python_pricing_result_template")
+                    return render_pricing(pricing_result, requested_budget(user_message)), trace
+                if catalog_result is not None and confirmed_lookup:
+                    _mark_reply_origin(trace, "search_products", "python_catalog_result_template")
+                    return render_catalog(catalog_result), trace
             if not confirmed_lookup and (required_tool or trace):
                 if attempt == 0 and not trace:
                     # One bounded repair when the model answers from history
                     # without requesting the fresh source required for this turn.
-                    tool_names = ", ".join(sorted(name for name in accepted_tools if name))
+                    reminder_tools = ", ".join(tool_names)
                     messages.append({"role": "system", "content": (
                         "A resposta ainda não foi verificada. Antes de responder à última pergunta, "
-                        f"faça uma consulta nova usando {tool_names}. "
+                        f"faça uma consulta nova usando {reminder_tools}. "
                         "Resolva o modelo específico pelo histórico e consulte seu nome completo. "
                         "Não basta reutilizar preços ou regras de uma mensagem anterior."
                     )})
                     continue
-                return "Não consegui confirmar essa informação nos arquivos da loja. Pode tentar reformular a pergunta?", trace
-            if required_tool == "product_pricing" and any(
-                token in _normalize(user_message) for token in ("custa", "preco")
-            ):
-                content = _complete_promotion_quote(content, trace)
+                return "Não consegui confirmar essa informação nos arquivos da loja. A consulta aos arquivos falhou ou não foi executada. Pode tentar reformular a pergunta?", trace
+            content = _visible_content(getattr(message, "content", None) or "")
+            if getattr(response, "done_reason", None) == "length":
+                return "Não consegui concluir a resposta. Vamos tentar uma pergunta mais específica?", trace
+            if not content:
+                return "Não consegui preparar uma resposta agora. Tente novamente, por favor.", trace
             clarification = _return_clarification(user_message, history or [])
             return_source_verified = any(
                 item["tool"] == "search_store_policies" and item["status"] == "ok"
@@ -123,7 +156,7 @@ def respond(
                         source_notes.append(note)
             if source_notes:
                 content += "\n\n*Fonte consultada: " + "; ".join(source_notes) + ".*"
-            return content, trace
+            return clean_model_answer(content), trace
 
         if len(calls) > 5:
             return "A consulta pediu operações demais. Vamos tentar uma pergunta mais específica?", trace
@@ -138,18 +171,39 @@ def respond(
         for call in calls:
             name = call.function.name
             arguments = call.function.arguments or {}
+            overrides = []
+            normalized_message = _normalize(user_message)
+            if name in {"search_products", "get_product_pricing"} and isinstance(arguments, dict):
+                if name == 'search_products' and arguments.get('query') and arguments.get('category'):
+                    category_named = any(word in normalized_message for word in (
+                        'violao', 'violoes', 'guitarra', 'baixo', 'bateria', 'teclado', 'piano',
+                        'ukulele', 'violino', 'saxofone', 'flauta', 'trompete', 'cordas orquestrais'))
+                    if not category_named:
+                        arguments = {**arguments, 'category': ''}
+                        overrides.append('category')
+                if re.search(r"\b(no pix|via pix|por pix|pelo pix)\b", normalized_message) and not re.search(r"\b(sem pix|nao quero|nao vou)\b", normalized_message):
+                    if arguments.get("payment_method") != "pix":
+                        arguments = {**arguments, "payment_method": "pix"}
+                        overrides.append("payment_method")
             if name not in TOOLS:
                 result = json.dumps({"error": "unknown tool"})
                 trace.append({"tool": name, "status": "rejected"})
             else:
                 try:
-                    result = bound_order_lookup(arguments, order_input) if name == "get_order_status" else TOOLS[name](**arguments)
+                    if name == "get_order_status":
+                        result = bound_order_lookup(arguments, order_input)
+                    else:
+                        result = TOOLS[name](**arguments)
                     decoded = json.loads(result)
                     if name == "get_order_status":
                         order_result = decoded
                         status = decoded["status"] if decoded["status"] in {"verified", "needs_input"} else "error"
                     else:
                         status = "ok" if "error" not in decoded and decoded.get("status", "ok") == "ok" else "error"
+                    if name == "search_products":
+                        catalog_result = decoded if status == "ok" else None
+                    elif name == "get_product_pricing":
+                        pricing_result = decoded
                     sections = decoded.get("sections", [])
                     trace.append({
                         "tool": name,
@@ -165,6 +219,7 @@ def respond(
                         "order_id": decoded.get("order_id"),
                         "next_field": decoded.get("next_field"),
                         "source_type": decoded.get("source_type"),
+                        "argument_overrides": overrides,
                         "topic": decoded.get("topic"),
                         "pages": sorted({page for section in sections for page in section["pages"]}),
                         "chapters": [section["chapter"] for section in sections],
@@ -177,6 +232,12 @@ def respond(
             messages.append({"role": "tool", "tool_name": name, "content": result})
 
     return "A consulta ficou mais complexa do que o esperado. Vamos tentar uma pergunta mais específica?", trace
+
+
+def _mark_reply_origin(trace: list[dict], tool: str, origin: str) -> None:
+    for item in trace:
+        if item["tool"] == tool:
+            item["reply_origin"] = origin
 
 
 def _price_quotes(result: dict) -> list[dict]:
@@ -196,34 +257,6 @@ def _price_quotes(result: dict) -> list[dict]:
             "discount_type": record["discount_type"],
         })
     return quotes
-
-
-def _complete_promotion_quote(content: str, trace: list[dict]) -> str:
-    """Add omitted promotion fields from one verified product, never recalculate.
-
-    This completeness safeguard is not a general validator of model claims.
-    """
-    quotes = {quote["product_id"]: quote for item in trace if item["status"] == "ok"
-              for quote in item.get("price_quotes", [])}
-    if len(quotes) != 1:
-        return content
-    quote = next(iter(quotes.values()))
-    if quote["discount_type"] != "promotion":
-        return content
-    details = [
-        ("list_price", quote["list_price_display_brl"], "Preço de tabela"),
-        ("discount_percent", quote["discount_percent"] + "%", "Promoção ativa"),
-        ("final_price", quote["final_price_display_brl"], "Preço final"),
-    ]
-    missing = [(field, value, label) for field, value, label in details
-               if value.replace("R$ ", "").replace(" ", "") not in content.replace(" ", "")]
-    if missing:
-        content = "\n".join(f"{label}: {value}." for _, value, label in missing) + "\n\n" + content
-        for item in trace:
-            if item.get("price_quotes") and item["status"] == "ok":
-                item["reply_origin"] = "model_with_source_price_details"
-                item["added_price_fields"] = [field for field, _, _ in missing]
-    return content
 
 
 def _visible_content(content: str) -> str:
@@ -246,6 +279,7 @@ def _requires_catalog_lookup(message: str) -> bool:
         "violao", "violoes", "guitarra", "ukulele", "baixo", "bateria",
         "teclado", "piano", "violino", "violoncelo", "flauta", "saxofone",
         "trompete", "instrumento", "modelo",
+        "voces tem", "voces vendem",
     ))
 
 

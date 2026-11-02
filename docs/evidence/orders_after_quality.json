@@ -1,0 +1,276 @@
+{
+  "recorded_at": "2026-11-02T19:52:49-03:00",
+  "model": "qwen3:4b",
+  "python": "3.12.10",
+  "ollama_python_sdk": "0.6.3",
+  "email_redacted": true,
+  "turns": [
+    {
+      "scenario": "ask_order_number",
+      "question": "Onde está meu pedido?",
+      "answer": "Claro, posso consultar o registro do pedido. Qual é o número do pedido?",
+      "history_messages_supplied": 0,
+      "trace": [],
+      "elapsed_seconds": 8.21,
+      "model_requests": [
+        {
+          "think_requested": false,
+          "tool_calls": [],
+          "reasoning_output_observed": true,
+          "generated_tokens": 390,
+          "prompt_tokens": 1733,
+          "finish_reason": "stop",
+          "elapsed_seconds": 8.21
+        }
+      ],
+      "tool_results": []
+    },
+    {
+      "scenario": "ask_registered_email",
+      "question": "11",
+      "answer": "Obrigado! Agora, qual é o e-mail cadastrado nesse pedido?",
+      "history_messages_supplied": 2,
+      "trace": [],
+      "elapsed_seconds": 6.35,
+      "model_requests": [
+        {
+          "think_requested": false,
+          "tool_calls": [],
+          "reasoning_output_observed": true,
+          "generated_tokens": 314,
+          "prompt_tokens": 1764,
+          "finish_reason": "stop",
+          "elapsed_seconds": 6.35
+        }
+      ],
+      "tool_results": []
+    },
+    {
+      "scenario": "verified_order_without_tracking",
+      "question": "[REDACTED_EMAIL]",
+      "answer": "Conferi o registro demonstrativo do seu pedido:\n**Pedido:** 11\n**Situação registrada:** confirmado\n**Itens:**\n- 1 × Kalani KAL-700T Tenor Natural\n**Total registrado na compra:** R$ 359,00\n**Código de rastreamento registrado:** não consta no registro\n**Previsão de entrega registrada:** não consta no registro\n*Esses dados são históricos. A previsão não confirma o recebimento; não há rastreamento ao vivo.*",
+      "history_messages_supplied": 4,
+      "trace": [
+        {
+          "tool": "get_order_status",
+          "status": "verified",
+          "matches": 0,
+          "filters": null,
+          "source": null,
+          "sources": null,
+          "promotion_source": null,
+          "product_id": null,
+          "pricing": null,
+          "price_quotes": [],
+          "order_id": "11",
+          "next_field": null,
+          "source_type": "historical_csv_snapshot_not_live_tracking",
+          "argument_overrides": [],
+          "topic": null,
+          "pages": [],
+          "chapters": [],
+          "references": [],
+          "ambiguities": [],
+          "reply_origin": "python_order_result_template"
+        }
+      ],
+      "elapsed_seconds": 10.96,
+      "model_requests": [
+        {
+          "think_requested": false,
+          "tool_calls": [
+            {
+              "name": "get_order_status",
+              "arguments": {
+                "order_id": "11",
+                "email": "[REDACTED_EMAIL]"
+              }
+            }
+          ],
+          "reasoning_output_observed": true,
+          "generated_tokens": 226,
+          "prompt_tokens": 1800,
+          "finish_reason": "stop",
+          "elapsed_seconds": 4.57
+        },
+        {
+          "think_requested": false,
+          "tool_calls": [],
+          "reasoning_output_observed": true,
+          "generated_tokens": 310,
+          "prompt_tokens": 1968,
+          "finish_reason": "stop",
+          "elapsed_seconds": 6.38
+        }
+      ],
+      "tool_results": [
+        {
+          "status": "verified",
+          "source_type": "historical_csv_snapshot_not_live_tracking",
+          "order_id": "11",
+          "order_status": "confirmed",
+          "items": [
+            {
+              "product_name": "Kalani KAL-700T Tenor Natural",
+              "quantity": 1
+            }
+          ],
+          "recorded_total_brl": "359.00",
+          "tracking_code": null,
+          "estimated_delivery": null,
+          "delivery_note": "The estimated delivery is a historical forecast, not proof of actual receipt. The CSV does not include an actual receipt date or a live carrier feed."
+        }
+      ]
+    },
+    {
+      "scenario": "wrong_email",
+      "question": "Quero consultar o pedido 11, e-mail [REDACTED_EMAIL]",
+      "answer": "Não consegui confirmar esse pedido com o número e o e-mail informados. Confira os dois dados e tente novamente, por favor.",
+      "history_messages_supplied": 0,
+      "trace": [
+        {
+          "tool": "get_order_status",
+          "status": "error",
+          "matches": 0,
+          "filters": null,
+          "source": null,
+          "sources": null,
+          "promotion_source": null,
+          "product_id": null,
+          "pricing": null,
+          "price_quotes": [],
+          "order_id": null,
+          "next_field": null,
+          "source_type": null,
+          "argument_overrides": [],
+          "topic": null,
+          "pages": [],
+          "chapters": [],
+          "references": [],
+          "ambiguities": [],
+          "reply_origin": "python_order_result_template"
+        }
+      ],
+      "elapsed_seconds": 18.58,
+      "model_requests": [
+        {
+          "think_requested": false,
+          "tool_calls": [
+            {
+              "name": "get_order_status",
+              "arguments": {
+                "order_id": "11",
+                "email": "[REDACTED_EMAIL]"
+              }
+            }
+          ],
+          "reasoning_output_observed": true,
+          "generated_tokens": 397,
+          "prompt_tokens": 1742,
+          "finish_reason": "stop",
+          "elapsed_seconds": 8.01
+        },
+        {
+          "think_requested": false,
+          "tool_calls": [],
+          "reasoning_output_observed": true,
+          "generated_tokens": 520,
+          "prompt_tokens": 1824,
+          "finish_reason": "stop",
+          "elapsed_seconds": 10.57
+        }
+      ],
+      "tool_results": [
+        {
+          "status": "not_verified",
+          "message": "Não consegui confirmar esse pedido com o número e o e-mail informados. Confira os dois dados e tente novamente, por favor."
+        }
+      ]
+    },
+    {
+      "scenario": "nonexistent_order",
+      "question": "Quero consultar o pedido 999999999999, e-mail [REDACTED_EMAIL]",
+      "answer": "Não consegui confirmar esse pedido com o número e o e-mail informados. Confira os dois dados e tente novamente, por favor.",
+      "history_messages_supplied": 0,
+      "trace": [
+        {
+          "tool": "get_order_status",
+          "status": "error",
+          "matches": 0,
+          "filters": null,
+          "source": null,
+          "sources": null,
+          "promotion_source": null,
+          "product_id": null,
+          "pricing": null,
+          "price_quotes": [],
+          "order_id": null,
+          "next_field": null,
+          "source_type": null,
+          "argument_overrides": [],
+          "topic": null,
+          "pages": [],
+          "chapters": [],
+          "references": [],
+          "ambiguities": [],
+          "reply_origin": "python_order_result_template"
+        }
+      ],
+      "elapsed_seconds": 49.76,
+      "model_requests": [
+        {
+          "think_requested": false,
+          "tool_calls": [
+            {
+              "name": "get_order_status",
+              "arguments": {
+                "order_id": "999999999999",
+                "email": "[REDACTED_EMAIL]"
+              }
+            }
+          ],
+          "reasoning_output_observed": true,
+          "generated_tokens": 1078,
+          "prompt_tokens": 1752,
+          "finish_reason": "stop",
+          "elapsed_seconds": 21.99
+        },
+        {
+          "think_requested": false,
+          "tool_calls": [],
+          "reasoning_output_observed": true,
+          "generated_tokens": 1346,
+          "prompt_tokens": 1844,
+          "finish_reason": "stop",
+          "elapsed_seconds": 27.76
+        }
+      ],
+      "tool_results": [
+        {
+          "status": "not_verified",
+          "message": "Não consegui confirmar esse pedido com o número e o e-mail informados. Confira os dois dados e tente novamente, por favor."
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "first_asks_only_order_number": true,
+    "second_asks_only_registered_email": true,
+    "no_order_details_before_verification": true,
+    "verified_followup_has_two_prior_turns": true,
+    "model_requests_order_tool_on_verified_turn": true,
+    "verified_result_returned_to_real_model": true,
+    "source_order_and_items_match": true,
+    "historical_total_preserved": true,
+    "missing_tracking_and_estimate_not_invented": true,
+    "historical_not_live_receipt_notice": true,
+    "wrong_email_denied_by_tool": true,
+    "nonexistent_order_denied_by_tool": true,
+    "denials_are_identical_and_generic": true,
+    "no_customer_fields_in_order_results": true,
+    "no_visible_thinking": true,
+    "all_requests_use_think_false": true
+  },
+  "passed": true,
+  "evaluation_limit": "Order replies are rendered by Python from customer-bound tool results; this is not independent model claim accuracy. Review source, access checks, tone and latency separately. No raw reasoning or full emails are stored."
+}
