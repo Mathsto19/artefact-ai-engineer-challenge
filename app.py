@@ -14,15 +14,18 @@ def show_trace(trace):
     if trace:
         with st.expander("Consultas realizadas"):
             for item in trace:
-                st.write(f"{item['tool']} — {item['status']} — resultados: {item.get('matches', 'n/a')}")
+                reference = f"páginas {item['pages']}" if item.get("pages") else f"resultados: {item.get('matches', 'n/a')}"
+                st.write(f"{item['tool']} — {item['status']} — {reference}")
                 if item.get("filters"):
                     st.json({"filters": item["filters"], "source": item.get("source")})
+                if item.get("references"):
+                    st.json({"source": item["source"], "references": item["references"], "ambiguities": item["ambiguities"]})
 
 
 st.set_page_config(page_title="Zubumafu — Empório da Música", page_icon="🎸")
 st.title("🎸 Zubumafu")
 st.caption("Assistente musical do Empório da Música · Protótipo com dados demonstrativos")
-st.info("Primeira etapa funcional: consultas ao catálogo. Pedidos, promoções e políticas ainda não estão disponíveis neste protótipo.")
+st.info("Consultas disponíveis: catálogo e políticas da loja. Pedidos e promoções por produto ainda não estão implementados.")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -35,7 +38,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
         show_trace(message.get("trace"))
 
-question = st.chat_input("Quer encontrar um instrumento? Me conta!")
+question = st.chat_input("Como posso ajudar com seu instrumento ou com a loja?")
 if question:
     prior_history = [{"role": item["role"], "content": item["content"]} for item in st.session_state.messages]
     st.session_state.messages.append({"role": "user", "content": question})

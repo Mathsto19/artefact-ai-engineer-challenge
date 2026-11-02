@@ -1,6 +1,6 @@
-# Initial milestone validation
+# Validation log
 
-Observed on **2 November 2026**, using São Paulo time (UTC-03:00). This validates an initial catalog increment, not the complete challenge.
+Observed on **2 November 2026**, using São Paulo time (UTC-03:00). The first sections record the original catalog milestone; the policy milestone and latest results are appended below. This does not validate the complete challenge.
 
 ## Source integrity and Git history
 
@@ -70,6 +70,63 @@ In the recorded passing run, the backend still produced reasoning output, which 
 
 AppTest checks the Streamlit application state without a browser. The actual model acceptance above ran through the same agent function separately; the interface simulation did not call a real model.
 
-## Remaining work
+## Remaining work after the original catalog milestone
 
 Policy retrieval, promotions and pricing rules, an explicit decision about order lookup, broader scope/error evaluation and 3–5 distinct observed conversations remain pending. Context pressure, latency, reasoning controls and unsupported factual claims require further evaluation. No general reliability score or production readiness is claimed.
+
+## Policy milestone - integration and offline tests
+
+The incoming policy ZIP was based on `9929359`, preceding the refinements already published in this repository. Its two new source/test files and policy changes were integrated without replacing the current agent, catalog corrections, pinned dependencies or existing tests. The seven original data files again matched by SHA-256. The ZIP's `.git` directory was not imported over the existing repository.
+
+The updated suite was run with:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+Result: **41 tests passed**, including all 16 previous regressions. Tests now require the installed pypdf dependency, but no running model, API key or network. They cover all ten extracted chapters, chapter continuations, exact source references, return context, three ambiguity warnings, PDF read failures, wrong-tool authorization, follow-up history, explicit clarification control and acceptance-check regressions.
+
+Dependency versions remain pinned, adding pypdf 6.21.4 to both the direct requirements and resolved constraints. `pip check` reported no broken requirements.
+
+## First actual policy trial - rejected on manual review
+
+The first two-turn trial retrieved chapter 4/page 4 correctly on both turns, in 46.98 and 37.62 seconds. The second reply, however, asked about packaging and signs of use instead of the actual receipt date. It also invented a step to follow a process in the online store, which the source did not describe.
+
+The initial automated receipt-date check was too weak: it accepted a mention of the seven-day receipt-based rule plus an unrelated question. The command returned success, but **manual review rejected the interaction**. The checker was corrected to inspect the actual date question, and regression tests distinguish that from a packaging question or a yes/no receipt question.
+
+For an explicit regret dialogue with missing channel/receipt information, Python now enforces those two clarification questions after the successful PDF lookup and actual model/tool round-trip. The trace records the missing field and `reply_origin: source_verified_clarification_template`. These are intentionally controlled customer replies, not evidence that the model independently followed every instruction. Only customer messages can provide purchase facts; no return is approved or registered. This narrow phrase matching is not a general eligibility/date engine.
+
+## Actual policy acceptance after correction
+
+Command:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_policies.py --output tmp/policy-smoke.json
+```
+
+Observed at **2026-11-02 16:10:45 -03:00**, using the original local `qwen3:4b` model through Ollama 0.40.13, SDK 0.6.3, Python 3.12.10 and pypdf 6.21.4.
+
+| Turn | Customer input | Displayed behavior | Source | Elapsed |
+| --- | --- | --- | --- | --- |
+| 1 | Regret after buying an acoustic guitar; can it be returned? | Asked whether the purchase was online or in the physical store. | Chapter 4, page 4 | 53.68 s |
+| 2 | "Foi online." | Retained context and asked when the instrument was received. | Chapter 4, page 4 | 74.47 s |
+
+Each turn made two actual model requests. Both retrieved the original PDF text, returned it to the model and appended verified references. The final answers asked one clarification at a time, did not approve the return and did not invent a storefront procedure. Their wording was controlled by Python as described above. All 11 structural checks passed, and the displayed replies were manually reviewed.
+
+The backend still emitted reasoning despite `think=False`; it was filtered from customer output and is not included in published artifacts. These timings are individual observations, not a performance benchmark.
+
+Artifacts: [actual bilingual dialogue](../examples/02_return_policy.md) and [machine-readable evidence](../examples/02_return_policy.json).
+
+## Catalog regression after enabling the second tool
+
+The actual catalog acceptance script was rerun because the available tool set and source guards changed. At **2026-11-02 16:13:08 -03:00**, it passed its tool/filter/record checks: 12 matching acoustic guitars, six records returned to the model and three displayed names/prices matching the source. Elapsed time was **80.41 seconds** in that run.
+
+The generated text still assumed a beginner profile and claimed the models were popular with beginners without supporting sales/demand data. Consequently this is a passing **tool-cycle and product-record check**, not a full factuality/persona pass. The evidence is retained in [catalog regression JSON](evidence/catalog_after_policies.json), and these qualitative issues remain open.
+
+## Policy interface check
+
+Streamlit AppTest with a simulated backend verified two chat turns, history passed to the second request, and PDF chapter/page references displayed in the expandable evidence. The earlier catalog/reset/backend-failure interface checks also passed with the new integration. The model acceptance runs above are separate from that interface simulation.
+
+## Current remaining work
+
+Next: product-specific promotions and deterministic price rules, including non-cumulative discounts. An explicit decision on order lookup, broader error/out-of-scope and factuality checks, latency/thinking improvements, and a total of 3–5 distinct observed conversations remain pending. Two distinct conversations are now recorded; rerunning the catalog question is a regression check, not a third distinct example. No final submission has been performed.

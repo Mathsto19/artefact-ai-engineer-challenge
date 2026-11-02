@@ -1,6 +1,6 @@
 # Development handoff
 
-This is an initial catalog milestone, not the finished Artefact submission.
+Catalog and policy retrieval are implemented. This is not the finished Artefact submission.
 
 ## Repository continuity
 
@@ -18,18 +18,21 @@ The existing first commit (`3c89eec`) and the prototype commits (`fe3745b`, `992
 - Read-only `search_products` over the original product/category CSVs.
 - Category normalization, availability and budget filters, literal specification search, deterministic BRL display and typed input checks.
 - Offline regression tests and a separate real-model catalog acceptance script.
+- `search_store_policies` reads the original PDF's ten chapters, retaining page references and chapter continuations.
+- Policy results surface the three known contact/installment/freight ambiguities; defects also retrieve warranty rules.
+- Policy questions require the corresponding tool. A successful catalog lookup cannot authorize a policy reply.
+- Missing purchase channel and online receipt date in an explicit regret dialogue are handled with source-verified clarification templates after the model/tool round-trip; the trace records their origin.
+- A separate two-turn policy acceptance script checks actual source use and follow-up behavior.
 
 See [validation.md](validation.md) for the actual evidence and its limits. A simulated-model test is not a real-model test. Reasoning hidden from a customer is not proof that reasoning generation was disabled.
 
 ## Next increment
 
-1. Implement policy retrieval by sections with provenance to the supplied PDF.
-2. Document interpretations of conflicting contacts, installment rules and the exact R$ 500 shipping boundary before turning them into automatic decisions.
-3. Add relevant behavior checks and a real interaction using the policy source.
-4. Implement promotion and pricing rules, including non-cumulative discounts and the activity flag's limitations.
-5. Decide whether limited order consultation belongs in the final scope; define its demo verification and privacy limits before exposing customer data.
-6. Complete out-of-scope/error handling and the chosen acceptance matrix.
-7. Record 3–5 distinct observed conversations with English documentation; review clean setup and final submission materials.
+1. Implement promotion and pricing rules, including non-cumulative discounts and the activity flag's limitations.
+2. Keep unresolved contacts, installment thresholds and the exact R$ 500 freight boundary explicit; do not silently turn them into automatic decisions.
+3. Decide whether limited order consultation belongs in the final scope; define its demo verification and privacy limits before exposing customer data.
+4. Complete out-of-scope/error handling and the chosen acceptance matrix. Return clarification phrase matching is not a general eligibility engine.
+5. Complete 3–5 distinct observed conversations with English documentation; review clean setup and final submission materials.
 
 The known reasoning/latency limitation should also be reevaluated with measured evidence. Do not expand the project with multi-agent orchestration or additional infrastructure unless a concrete requirement warrants it.
 
