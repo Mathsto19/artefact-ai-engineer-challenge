@@ -179,6 +179,52 @@ The catalog acceptance script was rerun because search results now include final
 
 Manual review again found persona/grounding defects: an unsolicited beginner assumption, an unsupported "three best" ranking and an opening nylon-string description despite the third suggestion having steel strings. This is a successful **source/filter/price regression**, not an overall factuality or persona pass. The observed answer is preserved in [catalog-after-pricing evidence](evidence/catalog_after_pricing.json); these text-quality issues remain unresolved.
 
-## Current remaining work
+## Remaining work after the pricing milestone
 
 Three distinct observed conversations are now recorded: catalog, returns and promotion/PIX/budget. This meets the example count's lower bound, but does not establish complete challenge coverage. Still pending: an explicit final decision on order consultation and access verification; out-of-scope, error and broader factuality/persona evaluation; latency/reasoning improvements; final clean setup, English documentation/submission materials and repository freeze after submission. Freight and installment calculations are not implemented. No final submission has been performed.
+
+## Order milestone - selective integration and regressions
+
+The order ZIP passed CRC verification. Its seven original data files matched the canonical sources by SHA-256. Its older baseline was expected: only the new order module/tests/handoff and relevant agent/persona/interface changes were integrated. Current catalog/pricing/policy controls, dependency pins, history and evidence were preserved. No incoming Git configuration was imported.
+
+The incoming package reported 40 passing tests (24 baseline plus 16 order tests); this was not claimed as validation of the canonical version. After integration and refinement, the canonical offline suite passed **89 tests**, including all 61 previous regressions and the 16 incoming order tests. The simulated successful agent test was updated to actually supply the customer's credentials; a model-provided email alone must not authorize details. Additional regressions cover guessed credentials, assistant-provided facts, stale valid email after an incorrect replacement, new-order resets, subject changes, incorrect source tools, malformed/truncated IDs, email text resembling an ID, source read errors, malformed tool arguments and truncated order drafts. `pip check` reported no broken requirements; no dependencies were added.
+
+The agent now binds order-tool inputs to customer messages in a narrow dialogue flow before the CSV association check. Missing credentials are clarified one at a time. The order response/denial is constructed by Python from the verified structured result after the model/tool round-trip; model-invented totals, dates or delivery claims are discarded. The trace marks this origin and does not contain the email. This is demonstrative verification, not production authentication or a general conversation parser.
+
+## Actual order acceptance
+
+Command:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_orders.py --output tmp/orders-smoke.json
+```
+
+Recorded at **2026-11-02 18:29:28 -03:00**, with original `qwen3:4b`, Python 3.12.10 and Ollama SDK 0.6.3. **All 16 structural checks passed**, followed by manual review of the final replies and source fields.
+
+| Scenario | Observed behavior | Elapsed |
+| --- | --- | --- |
+| "Onde está meu pedido?" | Application asked for the order number after a source-free model draft; no lookup or order existence was claimed. | 12.26 s |
+| Customer supplied 11 | Model called `get_order_status`; structured missing-email result led to the single email question. | 33.58 s |
+| Registered demo email supplied | Model requested the order tool; its verified result reached the model; Python displayed historical order 11. | 14.61 s |
+| Wrong email | Tool denied verification; application displayed the generic denial. | 19.76 s |
+| Nonexistent order | Same structured denial and displayed text, without confirming existence. | 31.82 s |
+
+The verified record was **confirmed**, with **1 × Kalani KAL-700T Tenor Natural** and a **R$ 359.00 historical total**. It was not repriced to today's R$ 323.10 promotional offer. Tracking and estimated delivery were both absent and explicitly described as unavailable. No actual receipt date or live tracking was invented. The reply contained no customer profile, internal notes or claimed mutation.
+
+These are controlled application replies, not proof that the model draft was correct. The first turn made one real model request; each other scenario made two. Reasoning still appeared despite `think=False`, was filtered/discarded and was not recorded. Individual timings are not a benchmark or proof of a general performance improvement. Published evidence redacts the matching demo email and all email strings in the recorded requests/questions.
+
+Artifacts: [observed dialogue and English translation](../examples/04_order_lookup.md), [redacted machine-readable evidence](../examples/04_order_lookup.json).
+
+## Order interface check
+
+Streamlit AppTest with a simulated backend verified the three-turn display, four prior messages passed to the final turn, historical total, safe order trace and conversation reset. It used the observed redacted answer/trace fixtures and did not call a real model. The initial test-harness attempt used a relative app path that resolved under `tmp/`; rerunning with the absolute app path passed without application changes.
+
+## Policy regression after adding orders
+
+The actual two-turn return-policy scenario was rerun because the fourth tool and order-context routing could otherwise interfere with policy guidance. At **2026-11-02 18:35:25 -03:00**, all 11 checks passed. The source lookup retrieved chapter 4/page 4 on both turns, and the application retained its controlled purchase-channel then receipt-date questions. Neither reply approved a return or disclosed order details. The regression took **32.48 and 34.20 seconds**; [machine-readable evidence](evidence/policies_after_orders.json) records the actual results and the continued reasoning limitation.
+
+A separate offline regression verifies that "Me arrependi do meu pedido. Posso devolver?" stays in the PDF/return clarification flow despite mentioning an order. The narrow order context must not replace that established behavior with an unnecessary request for order credentials.
+
+## Current remaining work
+
+The selected functional scope now includes catalog, policies, promotions/PIX and demonstrative orders. Four distinct conversations are recorded; denial cases supplement the order example. Stop adding features and complete the final review: factuality/persona defects in catalog prose, broader out-of-scope/error behavior, latency/reasoning limits, clean setup, final English documentation and submission materials. Order verification remains demo-only; freight/installment calculations are excluded. No submission or repository freeze has occurred.

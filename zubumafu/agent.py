@@ -11,12 +11,13 @@ from typing import Any
 from .catalog import _normalize, search_products
 from .policies import search_store_policies
 from .pricing import get_product_pricing
+from .orders import bound_order_lookup, get_order_status, order_context, render_order_result
 from .persona import SYSTEM_PROMPT
 
 
 MODEL = "qwen3:4b"
 TOOLS = {"search_products": search_products, "search_store_policies": search_store_policies,
-         "get_product_pricing": get_product_pricing}
+         "get_product_pricing": get_product_pricing, "get_order_status": get_order_status}
 TOOL_CYCLE_LIMIT = 3
 
 
@@ -39,7 +40,9 @@ def respond(
     messages.extend((history or [])[-12:])
     messages.append({"role": "user", "content": user_message + "\n/no_think"})
     trace: list[dict[str, object]] = []
-    required_tool = _required_tool(user_message, history or [])
+    order_input = order_context(user_message, history or [])
+    required_tool = "get_order_status" if order_input is not None else _required_tool(user_message, history or [])
+    order_result = None
 
     for attempt in range(TOOL_CYCLE_LIMIT):
         response = chat_fn(
@@ -53,6 +56,19 @@ def respond(
         message = response.message
         calls = getattr(message, "tool_calls", None) or []
         if not calls:
+            # Order drafts never supply customer-visible details, including
+            # when a model hallucinates after verification fails or truncates.
+            if order_result is not None:
+                for item in trace:
+                    if item["tool"] == "get_order_status":
+                        item["reply_origin"] = "python_order_result_template"
+                return render_order_result(order_result), trace
+            if any(item["tool"] == "get_order_status" for item in trace):
+                return "Não consegui consultar esse pedido agora. Tente novamente, por favor.", trace
+            if order_input is not None and not all(order_input.values()):
+                # Missing credentials require only a question, never a lookup
+                # revealing whether an order exists. No model tool call claimed.
+                return render_order_result(json.loads(get_order_status(**order_input))), trace
             content = _visible_content(getattr(message, "content", None) or "")
             if getattr(response, "done_reason", None) == "length":
                 return "Não consegui concluir a resposta. Vamos tentar uma pergunta mais específica?", trace
@@ -127,9 +143,13 @@ def respond(
                 trace.append({"tool": name, "status": "rejected"})
             else:
                 try:
-                    result = TOOLS[name](**arguments)
+                    result = bound_order_lookup(arguments, order_input) if name == "get_order_status" else TOOLS[name](**arguments)
                     decoded = json.loads(result)
-                    status = "ok" if "error" not in decoded and decoded.get("status", "ok") == "ok" else "error"
+                    if name == "get_order_status":
+                        order_result = decoded
+                        status = decoded["status"] if decoded["status"] in {"verified", "needs_input"} else "error"
+                    else:
+                        status = "ok" if "error" not in decoded and decoded.get("status", "ok") == "ok" else "error"
                     sections = decoded.get("sections", [])
                     trace.append({
                         "tool": name,
@@ -142,6 +162,9 @@ def respond(
                         "product_id": decoded.get("product_id"),
                         "pricing": decoded.get("pricing"),
                         "price_quotes": _price_quotes(decoded),
+                        "order_id": decoded.get("order_id"),
+                        "next_field": decoded.get("next_field"),
+                        "source_type": decoded.get("source_type"),
                         "topic": decoded.get("topic"),
                         "pages": sorted({page for section in sections for page in section["pages"]}),
                         "chapters": [section["chapter"] for section in sections],

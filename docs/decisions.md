@@ -1,6 +1,6 @@
 # Zubumafu - Architecture Decision Record
 
-Status: catalog, policy retrieval and promotion/PIX pricing integrated. Broad behavioral validation and the final scope review are pending. See [validation](validation.md) for observed results.
+Status: catalog, policies, promotion/PIX pricing and demonstrative orders integrated. Final behavioral validation and submission review are pending. See [validation](validation.md) for observed results.
 
 ## Scope and sources
 
@@ -20,7 +20,7 @@ The prototype assists customers of Empório da Música using the supplied CSV da
 
 ## Model/tool boundary
 
-The LLM identifies the customer intent, requests available tools, and writes a natural response. Python owns implemented filters, money calculations, promotion eligibility and source provenance. Order lookup is not implemented. Each acceptance demonstration must show a complete cycle of model tool request, Python execution, tool result returned to the model, and a grounded answer.
+The LLM identifies customer intent, requests available tools and drafts a response. Python owns implemented filters, money calculations, promotion eligibility, order verification and source provenance. Sensitive order replies use controlled rendering from tool fields. Each tool acceptance demonstration must show a complete cycle of model tool request, Python execution, tool result returned to the model, and a grounded displayed answer.
 
 For Qwen3, request `think=False` through the Ollama client. The local base model nevertheless emitted reasoning in `message.content`, and `/api/show` reported `thinking.values: [true]`. Consequently, simply displaying `message.content` was insufficient. The implementation adds `/no_think` steering and discards labeled reasoning, including a closing tag whose opening tag was prefilled by the template. An unfinished reasoning block is never displayed. This separates customer output from model reasoning but does not establish that generation was disabled.
 
@@ -50,6 +50,14 @@ The dedicated tool accepts an exact ID or resolves a product name, preferring an
 
 An actual first trial omitted the original price and tried to answer the budget follow-up without a new lookup. The guard blocked that last answer. Python now completes missing original/percentage/final fields for a single-model promotional quote from verified tool facts, retaining the model draft and recording the added fields. A first response with no required lookup gets one verification reminder; the total limit remains three model requests. This bounded recovery does not authorize a source-free answer and can add latency. Full claim verification and general product-reference resolution remain future work.
 
+## Demonstrative order increment
+
+The selected scope is read-only historical order consultation. `get_order_status` verifies the order/customer/email association before returning any order fields, then joins instruments and quantities without calculating prices. The total comes directly from `orders.total_brl`, not today's promotions. No historical unit price, actual receipt date or live carrier information is invented. Missing tracking and estimated delivery remain null. Internal notes and full customer records are excluded.
+
+The number/email comparison is explicitly demo-only, not production authentication. Existing and nonexistent numbers produce the same missing-email question; a nonexistent order and a mismatching email produce the same generic denial. The agent additionally binds tool arguments to facts in customer messages, preventing a model guess or assistant-invented email from satisfying verification. A changed order resets the email, and a subject change closes the narrow flow. These phrase/regex rules are conservative, not a general identity or conversation-state engine. IDs such as `1.5` or `1e0` cannot be truncated to a valid order.
+
+The tool response still reaches the model, but the order-specific draft is discarded. Python renders only verified fields or the structured clarification/denial. Trace metadata records `python_order_result_template` without the email. When credentials are incomplete and the model answers without a tool, the application asks the next missing field without checking order existence. No model-requested lookup is claimed for that case. The customer's email remains in local session history and configured model requests; saved acceptance evidence redacts it. No new infrastructure or runtime dependency was added. Production authentication, rate limiting and secure real-customer data hosting are future work.
+
 ## Persona
 
 Zubumafu is friendly, patient, musically knowledgeable, professional, and warm without being effusive. It adapts explanations to the customer's expertise. In complaints it acknowledges frustration, stays calm, avoids forced humor, and gives a concrete next step. It does not claim actions or verification that did not occur.
@@ -58,7 +66,7 @@ Zubumafu is friendly, patient, musically knowledgeable, professional, and warm w
 
 - Broader real-model grounding, out-of-scope behavior and latency evaluation.
 - Human-confirmed interpretations of ambiguous policy rules before implementing their calculations.
-- Secure order-lookup demonstration. Matching an email alone is not production authentication.
+- Production authentication/authorization for any use with real customer records; the implemented order/email match is only demonstrative.
 - Behavior on missing records, tool errors and out-of-scope questions.
 - Final README, 3-5 observed conversations covering distinct scenarios, and final submission. The public repository already exists.
 

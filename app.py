@@ -22,12 +22,15 @@ def show_trace(trace):
                     st.json({"source": item["source"], "references": item["references"], "ambiguities": item["ambiguities"]})
                 if item.get("pricing"):
                     st.json({"product_id": item["product_id"], "pricing": item["pricing"], "sources": item.get("sources")})
+                if item["tool"] == "get_order_status":
+                    st.json({"order_id": item.get("order_id"), "next_field": item.get("next_field"),
+                             "source_type": item.get("source_type"), "reply_origin": item.get("reply_origin")})
 
 
 st.set_page_config(page_title="Zubumafu — Empório da Música", page_icon="🎸")
 st.title("🎸 Zubumafu")
 st.caption("Assistente musical do Empório da Música · Protótipo com dados demonstrativos")
-st.info("Consultas disponíveis: catálogo, políticas, promoções e preços com PIX. Pedidos e cálculos de frete ou parcelamento ainda não estão implementados.")
+st.info("Consultas disponíveis: catálogo, políticas, promoções, preços com PIX e pedidos demonstrativos. Para pedidos, informe número e e-mail cadastrado. Essa conferência não é autenticação de produção. Cálculos de frete e parcelamento ainda não estão implementados.")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
