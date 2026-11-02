@@ -27,3 +27,9 @@ artefact_ai_engineer_materiais_e_guia.zip
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Application secrets, logs, and local import artifacts
+.streamlit/secrets.toml
+*.log
+tmp/
+zubumafu-prototipo-inicial.zip
