@@ -69,6 +69,12 @@ def search_products(
     Returns:
         A JSON string containing matched product records, source and filters.
     """
+    if not isinstance(category, str) or not isinstance(query, str):
+        return json.dumps({"error": "category and query must be strings"})
+    if not isinstance(available_only, bool):
+        return json.dumps({"error": "available_only must be a boolean"})
+    if isinstance(max_price_brl, bool):
+        return json.dumps({"error": "max_price_brl must be a number"})
     try:
         budget = Decimal(str(max_price_brl))
     except (InvalidOperation, TypeError, ValueError):
@@ -85,7 +91,7 @@ def search_products(
         category_name = categories.get(product["category_id"], "Unknown")
         if not _category_match(category, category_name):
             continue
-        if term and term not in _normalize(name + " " + description):
+        if term and term not in _normalize(name + " " + description + " " + product["specs"]):
             continue
         try:
             price = Decimal(product["price_brl"])
@@ -105,6 +111,7 @@ def search_products(
             "name": name,
             "category": category_name,
             "price_brl": str(price.quantize(Decimal("0.01"))),
+            "price_display_brl": "R$ " + f"{price:,.2f}".replace(",", "_").replace(".", ",").replace("_", "."),
             "stock_quantity": stock,
             "status": product["status"],
             "description": description,
@@ -116,7 +123,7 @@ def search_products(
         "source_type": "provided_snapshot_not_live_inventory",
         "filters": {"category": category, "query": query, "max_price_brl": str(budget), "available_only": available_only},
         "total_matches": len(results),
-        "shown_matches": min(len(results), 12),
-        "products": results[:12],
+        "shown_matches": min(len(results), 6),
+        "products": results[:6],
     }
     return json.dumps(payload, ensure_ascii=False)

@@ -5,6 +5,21 @@ from zubumafu.catalog import search_products
 
 
 class CatalogTests(unittest.TestCase):
+    def test_invalid_argument_types_return_structured_errors(self):
+        for arguments in [
+            {"category": 123},
+            {"query": ["Fender"]},
+            {"available_only": "false"},
+            {"max_price_brl": True},
+        ]:
+            with self.subTest(arguments=arguments):
+                self.assertIn("error", json.loads(search_products(**arguments)))
+
+    def test_search_includes_technical_specifications(self):
+        result = json.loads(search_products(query="Basswood", available_only=False))
+        self.assertGreater(result["total_matches"], 0)
+        self.assertTrue(all(item["specs"].get("body") == "Basswood" for item in result["products"]))
+
     def test_available_guitars_below_budget(self):
         result = json.loads(search_products(category="guitarra", max_price_brl=8000))
         self.assertGreater(result["total_matches"], 0)
@@ -19,6 +34,8 @@ class CatalogTests(unittest.TestCase):
         result = json.loads(search_products(category="violão", max_price_brl=1000))
         self.assertGreater(result["total_matches"], 0)
         self.assertEqual({item["category"] for item in result["products"]}, {"Violões"})
+        self.assertEqual(result["products"][0]["name"], "Tagima Memphis AC-39 Nylon Natural")
+        self.assertEqual(result["products"][0]["price_display_brl"], "R$ 429,90")
 
     def test_unknown_model_does_not_generate_fake_item(self):
         result = json.loads(search_products(query="inexistente-xyz-000"))
