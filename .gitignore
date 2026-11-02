@@ -1,0 +1,29 @@
+# Python environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+.ipynb_checkpoints/
+
+# Local credentials and configuration
+.env
+.env.*
+!.env.example
+
+# Local handoff materials
+GUIA_DO_PROJETO.md
+artefact_ai_engineer_materiais_e_guia.zip
+
+# Local editor and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
