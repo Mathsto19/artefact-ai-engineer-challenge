@@ -72,6 +72,10 @@ Repeated actual steel-string follow-up trials skipped the required new lookup. F
 
 An actual unavailable-endpoint trial exposed SDK `httpx.RequestError` exceptions escaping the earlier built-in connection-error handler. The client boundary now maps SDK transport/response errors to the existing recoverable backend failure. The customer sees no internal endpoint or traceback.
 
+## Recorded conversations for review
+
+The challenge requests three to five varied interaction examples. Four accepted dialogues are accessible under the interface's **Minhas conversas** section, alongside personal chats: catalog/string types, promotion/PIX/budget, returns and orders. They are loaded through a fixed manifest from the latest existing evidence reports, without inference, database seeding or changes to original evidence. The selected contiguous turns exclude independent negative checks. Dates/model, source traces, timings and a Markdown export identify their provenance. The catalog follow-up explicitly discloses direct application lookup; order email remains redacted. Read-only mode has no input/delete controls, keeping recordings distinct from fresh execution. Original bilingual milestone examples remain preserved.
+
 ## Persona
 
 Zubumafu is friendly, patient, musically knowledgeable, professional, and warm without being effusive. It adapts explanations to the customer's expertise. In complaints it acknowledges frustration, stays calm, avoids forced humor, and gives a concrete next step. It does not claim actions or verification that did not occur.

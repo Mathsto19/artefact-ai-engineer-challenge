@@ -10,6 +10,7 @@ from unittest.mock import patch
 from streamlit.testing.v1 import AppTest
 
 from zubumafu.conversations import ConversationStore
+from zubumafu.recorded_examples import EXAMPLES, load_example
 
 
 APP = str(Path(__file__).resolve().parents[1] / "app.py")
@@ -89,6 +90,45 @@ class StreamlitUITests(unittest.TestCase):
             answer = self.store.messages(app.session_state['chat_id'])[-1]['content']
             self.assertIn('Ollama', answer)
             self.assertNotIn('private machine address', answer)
+
+    def test_recorded_conversations_open_without_inference_or_private_history_changes(self):
+        with patch('zubumafu.streamlit_ui.respond') as backend:
+            app = AppTest.from_file(APP).run(timeout=15)
+            personal_id = app.session_state['chat_id']
+            before = self.store.list_all()
+            for example in EXAMPLES:
+                app.button(key=f'recorded_{example.key}').click().run(timeout=15)
+                self.assertFalse(app.exception)
+                self.assertEqual(len(app.chat_message), example.turn_count * 2)
+                self.assertEqual(len(app.chat_input), 0)
+                self.assertFalse(any(button.key == 'delete_chat' for button in app.button))
+                rendered = '\n'.join(item.value for item in app.markdown)
+                for turn in load_example(example.key)['turns']:
+                    self.assertIn(turn['question'], rendered)
+                    self.assertIn(turn['answer'], rendered)
+                self.assertEqual(self.store.list_all(), before)
+                self.assertEqual(self.store.messages(personal_id), [])
+            backend.assert_not_called()
+            app.button(key=f'chat_{personal_id}').click().run(timeout=15)
+            self.assertEqual(len(app.chat_input), 1)
+            self.assertEqual(len(app.chat_message), 0)
+            app.button(key='recorded_catalog').click().run(timeout=15)
+            app.button(key='new_chat').click().run(timeout=15)
+            self.assertEqual(len(app.chat_input), 1)
+            self.assertNotEqual(app.session_state['chat_id'], personal_id)
+            self.assertEqual(len(app.chat_message), 0)
+            self.assertNotIn('recorded_example', app.session_state)
+
+    def test_missing_record_shows_error_without_generating_a_replacement(self):
+        with patch('zubumafu.streamlit_ui.respond') as backend:
+            app = AppTest.from_file(APP).run(timeout=15)
+            with patch('zubumafu.streamlit_ui.load_example', side_effect=FileNotFoundError):
+                app.button(key='recorded_catalog').click().run(timeout=15)
+            self.assertFalse(app.exception)
+            self.assertEqual(len(app.error), 1)
+            self.assertEqual(len(app.chat_message), 0)
+            self.assertEqual(len(app.chat_input), 0)
+            backend.assert_not_called()
 
 
 if __name__ == '__main__':

@@ -15,6 +15,7 @@ from .agent import respond
 from .conversations import ConversationStore, DEFAULT_DB
 from .demo_scenarios import SCENARIOS, SCENARIO_BY_KEY
 from .response_quality import strip_emojis
+from .recorded_examples import EXAMPLES, EXAMPLE_BY_KEY, load_example, recorded_date, as_markdown
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,32 @@ def show_trace(trace):
                        'argument_overrides') if item.get(key) is not None}
             if details:
                 st.json(details)
+
+
+def show_recorded_example(key: str) -> None:
+    try:
+        recording = load_example(key)
+    except (OSError, ValueError, KeyError):
+        st.error("Não consegui abrir o registro desta conversa. Confira os arquivos do projeto.")
+        return
+    example = recording["example"]
+    st.subheader(example.title)
+    st.caption(f"Conversa registrada · {recorded_date(recording)} · {recording['model']}")
+    st.write("Exemplo para leitura. As mensagens abaixo já foram registradas; abrir esta conversa não executa o modelo.")
+    with st.expander("Sobre esta conversa"):
+        st.write(example.note)
+        st.caption(f"Registro original: {example.evidence_file}")
+        st.caption("As respostas usam os arquivos demonstrativos. Não representam estoque ou rastreamento ao vivo.")
+    st.download_button("Baixar conversa (.md)", data=as_markdown(recording),
+                       file_name=f"zubumafu-{key}.md", mime="text/markdown",
+                       key=f"download_recorded_{key}")
+    for turn in recording["turns"]:
+        with st.chat_message("Cliente", avatar=":material/person:"):
+            st.markdown(strip_emojis(turn["question"]))
+        with st.chat_message("Zubumafu", avatar=":material/graphic_eq:"):
+            st.markdown(strip_emojis(turn["answer"]))
+            st.caption(f"Tempo registrado: {turn['elapsed_seconds']:.2f} s")
+            show_trace(turn.get("trace"))
 
 
 def main() -> None:
@@ -109,6 +136,7 @@ def main() -> None:
 
     def switch_chat(chat_id: str) -> None:
         st.session_state.chat_id = chat_id
+        st.session_state.pop("recorded_example", None)
         st.session_state.confirm_delete = False
         st.session_state.pop("queued_question", None)
 
@@ -121,21 +149,31 @@ def main() -> None:
             st.rerun()
 
         st.markdown("#### Minhas conversas")
+        st.caption("Exemplos registrados para avaliação")
+        for example in EXAMPLES:
+            if st.button(example.title, key=f"recorded_{example.key}", use_container_width=True,
+                         type="primary" if st.session_state.get("recorded_example") == example.key else "secondary"):
+                st.session_state.recorded_example = example.key
+                st.session_state.confirm_delete = False
+                st.session_state.pop("queued_question", None)
+                st.rerun()
+
         chats = store.list_all()
         personal_chats = [item for item in chats if item["kind"] == "personal"]
+        st.caption("Suas conversas")
         if not personal_chats:
             st.caption("Comece uma conversa para vê-la aqui.")
         for item in personal_chats:
             if st.button(strip_emojis(item['title']), key=f"chat_{item['id']}",
                          use_container_width=True,
-                         type="primary" if item["id"] == st.session_state.chat_id else "secondary"):
+                         type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
                 switch_chat(item["id"])
                 st.rerun()
 
         st.markdown("#### Conversas de teste")
         for item in (entry for entry in chats if entry["kind"] == "test"):
             if st.button(strip_emojis(item['title']), key=f"test_chat_{item['id']}", use_container_width=True,
-                         type="primary" if item["id"] == st.session_state.chat_id else "secondary"):
+                         type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
                 switch_chat(item["id"])
                 st.rerun()
         with st.expander("Iniciar um teste"):
@@ -161,6 +199,10 @@ def main() -> None:
       <p>Consulte instrumentos, preços, políticas e pedidos.</p>
     </div>
     """, unsafe_allow_html=True)
+    recorded_key = st.session_state.get("recorded_example")
+    if recorded_key in EXAMPLE_BY_KEY:
+        show_recorded_example(recorded_key)
+        return
     header, remove_column = st.columns([5, 1], vertical_alignment="center")
     with header:
         st.subheader(("Teste · " if scenario else "") + strip_emojis(conversation["title"]))
