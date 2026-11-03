@@ -135,23 +135,24 @@ def theme_css(mode: str) -> str:
         .zubu-banner h2 { margin: 0; font-size: 1.35rem; color: var(--z-text); }
         .zubu-banner p { margin: .4rem 0 0; font-size: .95rem; color: var(--z-muted); }
         .st-key-conversation_header {
-            background: var(--z-surface); border: 1px solid var(--z-border);
-            border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem;
+            background: transparent; border: 0; border-bottom: 1px solid var(--z-border);
+            border-radius: 0; padding: .5rem 0 1.1rem; margin-bottom: 1.25rem;
             display: block !important;
         }
         .st-key-conversation_header > * { flex-shrink: 0 !important; }
-        .zubu-chat-heading { display: flex; align-items: center; gap: .9rem; min-width: 0; padding: .15rem 0; }
-        .zubu-heading-mark {
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-            width: 2.75rem; height: 2.75rem; border-radius: 11px;
-            background: var(--z-selection); color: var(--z-accent); font-weight: 750; font-size: 1.2rem;
-        }
+        .zubu-chat-heading { min-width: 0; padding: .15rem 0; }
         .st-key-conversation_header .zubu-chat-heading h2 {
-            font-size: 1.15rem; line-height: 1.4; margin: 0;
+            font-size: 1.2rem; line-height: 1.4; margin: 0;
             padding: 0; font-weight: 650; overflow-wrap: anywhere;
         }
         .zubu-chat-heading .zubu-heading-subtitle {
-            font-size: .88rem; line-height: 1.5; color: var(--z-muted); margin: 0; padding-top: .3rem;
+            font-size: .85rem; line-height: 1.5; color: var(--z-muted); margin: 0; padding-top: .25rem;
+        }
+        .st-key-conversation_header [data-testid="stPopoverButton"] {
+            background: transparent !important; border-color: transparent; min-height: 2.4rem;
+        }
+        .st-key-conversation_header [data-testid="stPopoverButton"]:hover {
+            background: var(--z-surface-alt) !important; border-color: var(--z-border);
         }
         .st-key-delete_chat button {
             background: transparent; border-color: transparent; min-height: 2.25rem; padding: .35rem .5rem;

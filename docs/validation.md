@@ -438,3 +438,9 @@ The next screenshot showed clipped section labels and an overly compressed heade
 Navigation rows have a comfortable minimum height, more generous padding and readable line-height. Unselected rows are quiet, with surface feedback on hover; active rows remain distinct. The header uses natural block height and more padding, with a larger identity mark and subtitle. Message bubbles also have more internal space and separation. Bottom anchoring, column alignment, themes and all existing interaction identifiers remain intact.
 
 All **144 tests passed**. Browser runtime selection was attempted but reported no available browser; troubleshooting documentation was consulted, and no user setup was requested. This confirms functional regressions only; the updated visual design has not received automatic screenshot approval.
+
+## Simplified conversation heading
+
+Following the next header screenshot, removed the decorative monogram and card frame. The heading is now a flat title/subtitle area with a single bottom separator. Greeting/new-chat titles display `Zubumafu` above `Empório da Música`; meaningful stored titles remain visible. Delete moves into an Options popover, retaining the existing confirmation flow. Stored conversation titles/history are unchanged.
+
+All **144 tests passed**, including delete/keep behavior. Browser appearance remains unverified automatically.

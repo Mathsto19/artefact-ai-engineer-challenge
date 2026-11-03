@@ -194,18 +194,18 @@ def render_conversation(store, switch_chat, question=None) -> None:
         return
     title = clean_display_text(conversation["title"])
     if is_greeting(title) or title == 'Nova conversa':
-        title = 'Conversa com Zubumafu'
-    subtitle = 'Conversa de teste' if scenario else 'Atendimento do Empório da Música'
+        title = 'Zubumafu'
+    subtitle = 'Conversa de teste' if scenario else 'Empório da Música'
     with st.container(key="conversation_header"):
-        header, remove_column = st.columns([6, 1], vertical_alignment="center")
+        header, remove_column = st.columns([7, 1], vertical_alignment="center")
         with header:
             st.markdown(f'''<div class="zubu-chat-heading">
-                <span class="zubu-heading-mark" aria-hidden="true">Z</span>
                 <div><h2>{escape(title)}</h2><p class="zubu-heading-subtitle">{subtitle}</p></div>
                 </div>''', unsafe_allow_html=True)
         with remove_column:
-            if st.button("Excluir", key="delete_chat", icon=":material/delete:", help="Excluir esta conversa"):
-                st.session_state.confirm_delete = True
+            with st.popover("Opções", icon=":material/more_horiz:"):
+                if st.button("Excluir conversa", key="delete_chat", icon=":material/delete:"):
+                    st.session_state.confirm_delete = True
 
     if st.session_state.get("confirm_delete"):
         st.warning("Excluir esta conversa e todas as mensagens salvas nela?")
