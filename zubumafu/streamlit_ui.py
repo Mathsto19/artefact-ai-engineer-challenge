@@ -143,8 +143,7 @@ def render_navigation(store, switch_chat, save_theme) -> None:
     st.markdown('<p class="zubu-nav-label">Exemplos para avaliação</p>', unsafe_allow_html=True)
     for example in EXAMPLES:
         if st.button(example.title, key=f"recorded_{example.key}", use_container_width=True,
-                     type="primary" if st.session_state.get("recorded_example") == example.key else "secondary",
-                     help="Abrir conversa registrada, sem executar o modelo"):
+                     type="primary" if st.session_state.get("recorded_example") == example.key else "secondary"):
             st.session_state.recorded_example = example.key
             st.session_state.confirm_delete = False
             st.session_state.pop("queued_question", None)
@@ -193,14 +192,13 @@ def render_conversation(store, switch_chat, question=None) -> None:
     title = clean_display_text(conversation["title"])
     if is_greeting(title) or title == 'Nova conversa':
         title = 'Conversa com Zubumafu'
-    subtitle = 'Conversa de teste' if scenario else 'Zubumafu · Assistente musical'
+    subtitle = 'Conversa de teste' if scenario else 'Atendimento do Empório da Música'
     with st.container(key="conversation_header"):
         header, remove_column = st.columns([6, 1], vertical_alignment="center")
         with header:
             st.markdown(f'''<div class="zubu-chat-heading">
                 <span class="zubu-heading-mark" aria-hidden="true">Z</span>
-                <div><p class="zubu-heading-label">Empório da Música</p>
-                <h2>{escape(title)}</h2><p class="zubu-heading-subtitle">{subtitle}</p></div>
+                <div><h2>{escape(title)}</h2><p class="zubu-heading-subtitle">{subtitle}</p></div>
                 </div>''', unsafe_allow_html=True)
         with remove_column:
             if st.button("Excluir", key="delete_chat", icon=":material/delete:", help="Excluir esta conversa"):

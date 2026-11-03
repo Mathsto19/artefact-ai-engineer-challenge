@@ -42,14 +42,19 @@ def theme_css(mode: str) -> str:
             border: 1px solid var(--z-border); border-radius: 14px;
             position: sticky; top: 1rem; max-height: calc(100dvh - 8rem);
             overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--z-border) transparent;
+            gap: .3rem !important;
         }
-        .st-key-conversation_navigation [data-testid="stVerticalBlock"] { gap: .45rem; }
+        .st-key-conversation_navigation [data-testid="stVerticalBlock"] { gap: .3rem !important; }
         .st-key-conversation_navigation .stButton button {
-            text-align: left; justify-content: flex-start; min-height: 2.35rem;
-            padding: .45rem .65rem; background: transparent; border-color: transparent;
+            text-align: left !important; justify-content: flex-start !important; min-height: 2.35rem;
+            padding: .4rem .65rem; background: transparent; border-color: transparent;
         }
         .st-key-conversation_navigation .stButton button [data-testid="stMarkdownContainer"] {
-            text-align: left; font-size: .9rem;
+            text-align: left !important; font-size: .9rem; width: 100%;
+        }
+        .st-key-conversation_navigation .stButton button > div { justify-content: flex-start !important; width: 100%; }
+        .st-key-conversation_navigation .stButton button p {
+            text-align: left !important; margin: 0; font-size: .9rem; line-height: 1.35;
         }
         .st-key-conversation_navigation .stButton button[kind="primary"] {
             background: var(--z-selection); border-color: var(--z-border); color: var(--z-text);
@@ -59,7 +64,7 @@ def theme_css(mode: str) -> str:
         }
         .st-key-conversation_navigation .stButton button:hover { background: var(--z-surface-alt); }
         .st-key-conversation_navigation .stButton button[kind="secondary"] {
-            background: transparent !important; color: var(--z-text) !important;
+            background: var(--z-surface-alt) !important; color: var(--z-text) !important;
         }
         .st-key-conversation_navigation .stButton button[kind="secondary"]:hover {
             background: var(--z-surface-alt) !important;
@@ -74,14 +79,20 @@ def theme_css(mode: str) -> str:
         }
         .zubu-brand { display: flex; flex-direction: column; gap: .1rem; margin-bottom: .35rem; }
         .zubu-brand-subtitle { font-size: .85rem; color: var(--z-muted); }
-        .zubu-nav-heading { font-size: .95rem; font-weight: 650; margin: .65rem 0 .15rem; }
-        .zubu-nav-label { color: var(--z-muted); font-size: .78rem; margin: .4rem 0 .1rem; }
+        .st-key-conversation_navigation .zubu-nav-heading { font-size: .95rem; font-weight: 650; margin: .65rem 0 .15rem; }
+        .st-key-conversation_navigation .zubu-nav-label { color: var(--z-muted); font-size: .78rem; margin: .4rem 0 .1rem; }
         [data-testid="stPopoverButton"] {
             background: var(--z-surface) !important; color: var(--z-text) !important;
             border: 1px solid var(--z-border);
             border-radius: 8px; min-height: 2.65rem;
         }
         [data-testid="stPopoverBody"] { background: var(--z-surface); color: var(--z-text); border-color: var(--z-border); }
+        [data-testid="stTooltipContent"], [role="tooltip"] {
+            background: var(--z-surface-alt) !important; color: var(--z-text) !important;
+            border: 1px solid var(--z-border); border-radius: 8px;
+        }
+        [data-testid="stTooltipContent"] [data-testid="stMarkdownContainer"],
+        [data-testid="stTooltipContent"] p { color: var(--z-text) !important; }
         [data-testid="stMarkdownContainer"], [data-testid="stWidgetLabel"],
         [data-testid="stText"], .stApp h1, .stApp h2, .stApp h3, .stApp h4 {
             color: var(--z-text);
@@ -104,19 +115,21 @@ def theme_css(mode: str) -> str:
         .zubu-banner p { margin: .4rem 0 0; font-size: .95rem; color: var(--z-muted); }
         .st-key-conversation_header {
             background: var(--z-surface); border: 1px solid var(--z-border);
-            border-radius: 12px; padding: .9rem 1rem; margin-bottom: .75rem;
+            border-radius: 12px; padding: .7rem .9rem; margin-bottom: .65rem;
         }
         .zubu-chat-heading { display: flex; align-items: center; gap: .8rem; min-width: 0; }
         .zubu-heading-mark {
             display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-            width: 2.65rem; height: 2.65rem; border-radius: 10px;
+            width: 2.25rem; height: 2.25rem; border-radius: 9px;
             background: var(--z-selection); color: var(--z-accent); font-weight: 750; font-size: 1.2rem;
         }
-        .zubu-chat-heading h2 {
+        .st-key-conversation_header .zubu-chat-heading h2 {
             font-size: 1.1rem; line-height: 1.35; margin: .1rem 0;
             padding: 0; font-weight: 650; overflow-wrap: anywhere;
         }
-        .zubu-heading-label, .zubu-heading-subtitle { font-size: .78rem; color: var(--z-muted); margin: 0; }
+        .zubu-chat-heading .zubu-heading-subtitle {
+            font-size: .78rem; line-height: 1.4; color: var(--z-muted); margin: .15rem 0 0;
+        }
         .st-key-delete_chat button {
             background: transparent; border-color: transparent; min-height: 2.25rem; padding: .35rem .5rem;
         }

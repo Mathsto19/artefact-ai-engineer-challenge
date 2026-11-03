@@ -424,3 +424,9 @@ All **144 tests passed**. AppTest verifies the theme control disappears with nav
 Personal/test conversations now use one compact header with a Zubumafu monogram, store identity, conversation title and a small delete action. The generic introductory banner and separate oversized anchored heading were removed. Empty conversations and greeting-only titles display `Conversa com Zubumafu`; stored titles and message history remain unchanged. User-derived title text is HTML-escaped before rendering. Test conversations retain their test identity and criteria panel.
 
 All **144 tests passed**, including existing conversation switching and delete/keep confirmation flows. The appearance still requires browser review.
+
+## Screenshot refinements: navigation rows, tooltips and header
+
+Removed redundant help tooltips from recorded-example buttons. Remaining native tooltips explicitly use matching palette foreground/background colors. Navigation spacing now applies to the panel's own flex container as well as nested containers; row labels and their internal wrappers explicitly align left. Unselected items have a subtle surface rather than visually floating as widely separated centered text. Section/row typography has sufficient selector specificity to override native Markdown defaults.
+
+The conversation header now contains a smaller monogram, the title and one store-service subtitle, removing the repetitive three-line identity block. Its padding and typography were reduced while preserving the delete confirmation flow. All **144 tests passed**; the supplied screenshots are the visual reference, and pixel-level browser approval remains separate.
