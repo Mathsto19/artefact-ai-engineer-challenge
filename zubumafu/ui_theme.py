@@ -60,7 +60,15 @@ def theme_css(mode: str) -> str:
         .zubu-sidebar-title { color: var(--z-accent); font-weight: 750; font-size: 1.5rem; }
         [data-testid="stChatMessage"] { background: var(--z-surface); color: var(--z-text);
             border: 1px solid var(--z-border); border-radius: 12px; padding: 1rem; margin-bottom: .75rem; }
-        [data-testid="stChatMessageAvatarCustom"] { background: var(--z-surface-alt); color: var(--z-text); }
+        [data-testid^="stChatMessageAvatar"] {
+            background: var(--z-surface-alt); color: var(--z-text);
+            border: 1px solid var(--z-border);
+        }
+        [data-testid^="stChatMessageAvatar"] [data-testid="stIconMaterial"],
+        [data-testid="stChatMessage"] > [data-testid="stIconMaterial"] {
+            color: var(--z-text) !important;
+        }
+        [data-testid^="stChatMessageAvatar"] svg { color: var(--z-text); }
         [data-testid="stChatInput"], [data-baseweb="base-input"] {
             background: var(--z-surface); border-color: var(--z-border); border-radius: 10px;
         }

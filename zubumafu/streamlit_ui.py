@@ -16,7 +16,7 @@ from .agent import respond
 from .ui_theme import THEMES, theme_css
 from .conversations import ConversationStore, DEFAULT_DB
 from .demo_scenarios import SCENARIOS, SCENARIO_BY_KEY
-from .response_quality import clean_display_text, clean_display_value, split_answer_sources
+from .response_quality import clean_display_text, clean_display_value, split_answer_sources, chat_markdown
 from .recorded_examples import EXAMPLES, EXAMPLE_BY_KEY, load_example, recorded_date, as_markdown
 
 logger = logging.getLogger(__name__)
@@ -58,9 +58,9 @@ def show_recorded_example(key: str) -> None:
                        key=f"download_recorded_{key}")
     for turn in recording["turns"]:
         with st.chat_message("Cliente", avatar=":material/person:"):
-            st.markdown(clean_display_text(turn["question"]))
+            st.markdown(chat_markdown(turn["question"]))
         with st.chat_message("Zubumafu", avatar=":material/graphic_eq:"):
-            st.markdown(split_answer_sources(turn["answer"])[0])
+            st.markdown(chat_markdown(split_answer_sources(turn["answer"])[0]))
             st.caption(f"Tempo registrado: {turn['elapsed_seconds']:.2f} s")
             show_trace(turn.get("trace"), turn["answer"])
 
@@ -230,10 +230,10 @@ def render_conversation(store, switch_chat) -> None:
         with st.chat_message("Zubumafu" if message["role"] == "assistant" else "Você",
                              avatar=":material/graphic_eq:" if message["role"] == "assistant" else ":material/person:"):
             if message["role"] == "assistant":
-                st.markdown(split_answer_sources(message["content"])[0])
+                st.markdown(chat_markdown(split_answer_sources(message["content"])[0]))
                 show_trace(message.get("trace"), message["content"])
             else:
-                st.markdown(clean_display_text(message["content"]))
+                st.markdown(chat_markdown(message["content"]))
 
     question = st.chat_input("Escreva sua mensagem para o Zubumafu...")
     queued = st.session_state.pop("queued_question", None)
@@ -241,7 +241,7 @@ def render_conversation(store, switch_chat) -> None:
     if question:
         prior = [{"role": item["role"], "content": item["content"]} for item in messages]
         with st.chat_message("Você", avatar=":material/person:"):
-            st.markdown(clean_display_text(question))
+            st.markdown(chat_markdown(question))
         with st.chat_message("Zubumafu", avatar=":material/graphic_eq:"):
             status = st.status("Lendo sua mensagem", expanded=False)
             output = st.empty()
@@ -255,7 +255,7 @@ def render_conversation(store, switch_chat) -> None:
                 if event['type'] == 'stage':
                     current_stage = event['label']
                 if event['type'] == 'answer':
-                    output.markdown(split_answer_sources(event['text'])[0])
+                    output.markdown(chat_markdown(split_answer_sources(event['text'])[0]))
                 if event['type'] != 'progress' or elapsed - last_update >= .25:
                     status.update(label=f"{current_stage} · {elapsed:.1f} s")
                     last_update = elapsed
@@ -271,7 +271,7 @@ def render_conversation(store, switch_chat) -> None:
                 )
                 status.update(label="Não consegui concluir a resposta", state="error", expanded=False)
             answer = clean_display_text(answer)
-            output.markdown(split_answer_sources(answer)[0])
+            output.markdown(chat_markdown(split_answer_sources(answer)[0]))
             show_trace(trace, answer)
         try:
             store.add_exchange(st.session_state.chat_id, question, answer, trace)

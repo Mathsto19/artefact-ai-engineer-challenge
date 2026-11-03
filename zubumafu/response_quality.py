@@ -197,6 +197,23 @@ def split_answer_sources(content: str) -> tuple[str, list[str]]:
     return '\n'.join(body).strip(), sources
 
 
+def chat_markdown(content: str) -> str:
+    """Keep BRL amounts literal instead of triggering Streamlit's math parser.
+
+    Only the rendered copy is escaped; stored replies and tool data stay intact.
+    Hard breaks preserve the separate lines in quotes and order summaries.
+    """
+    content = re.sub(r'(?<!\\)\$', r'\\$', clean_display_text(content))
+    lines = content.splitlines()
+    fenced = False
+    for index, line in enumerate(lines):
+        if line.lstrip().startswith(('```', '~~~')):
+            fenced = not fenced
+        elif not fenced and line.strip() and index + 1 < len(lines) and lines[index + 1].strip():
+            lines[index] = line.rstrip() + '  '
+    return '\n'.join(lines)
+
+
 def clean_display_value(value):
     """Format display metadata without changing stored/source tool payloads."""
     if isinstance(value, str):

@@ -11,7 +11,7 @@ from streamlit.testing.v1 import AppTest
 
 from zubumafu.conversations import ConversationStore
 from zubumafu.recorded_examples import EXAMPLES, load_example
-from zubumafu.response_quality import clean_display_text, split_answer_sources
+from zubumafu.response_quality import clean_display_text, split_answer_sources, chat_markdown
 
 
 APP = str(Path(__file__).resolve().parents[1] / "app.py")
@@ -98,6 +98,28 @@ class StreamlitUITests(unittest.TestCase):
             self.assertIn('Ollama', answer)
             self.assertNotIn('private machine address', answer)
 
+    def test_brl_quotes_render_as_text_in_both_themes_without_changing_history(self):
+        answer = ('**Kalani KAL-700T Tenor Natural**\n'
+                  'Preço de tabela: **R$ 359,00**.\n'
+                  'Promoção ativa: **10% de desconto**. Preço final: **R$ 323,10**.')
+        question = 'Cabe em R$ 340? E em R$ 300?'
+        with patch('zubumafu.streamlit_ui.respond', return_value=(answer, [])):
+            app = AppTest.from_file(APP).run(timeout=15)
+            app.chat_input[0].set_value(question).run(timeout=15)
+            for theme in ('Escuro', 'Claro'):
+                app.selectbox(key='ui_theme').set_value(theme).run(timeout=15)
+                self.assertFalse(app.exception)
+                body = app.chat_message[1].markdown[0].value
+                self.assertIn('**R\\$ 359,00**.', body)
+                self.assertIn('**R\\$ 323,10**.', body)
+                self.assertIn('Natural**  \nPreço', body)
+                self.assertIn('**10% de desconto**', body)
+                self.assertEqual(app.chat_message[0].markdown[0].value,
+                                 'Cabe em R\\$ 340? E em R\\$ 300?')
+            messages = self.store.messages(app.session_state['chat_id'])
+            self.assertEqual(messages[-1]['content'], answer)
+            self.assertEqual(messages[-2]['content'], question)
+
     def test_recorded_conversations_open_without_inference_or_private_history_changes(self):
         with patch('zubumafu.streamlit_ui.respond') as backend:
             app = AppTest.from_file(APP).run(timeout=15)
@@ -111,8 +133,8 @@ class StreamlitUITests(unittest.TestCase):
                 self.assertFalse(any(button.key == 'delete_chat' for button in app.button))
                 rendered = '\n'.join(item.value for item in app.markdown)
                 for turn in load_example(example.key)['turns']:
-                    self.assertIn(clean_display_text(turn['question']), rendered)
-                    self.assertIn(split_answer_sources(turn['answer'])[0], rendered)
+                    self.assertIn(chat_markdown(turn['question']), rendered)
+                    self.assertIn(chat_markdown(split_answer_sources(turn['answer'])[0]), rendered)
                 self.assertNotIn('Fonte consultada:', rendered)
                 self.assertEqual(self.store.list_all(), before)
                 self.assertEqual(self.store.messages(personal_id), [])

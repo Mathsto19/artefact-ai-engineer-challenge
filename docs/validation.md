@@ -356,3 +356,11 @@ Recommendation requests such as `me recomenda uma guitarra com um bom preço` no
 All **139 tests passed**, including catalog tool selection, real CSV matches and no invented budget for guitar/violão recommendation variants with an unrelated product in the prior history. Existing specific-model price and PIX follow-up tests remain passing.
 
 The exact reported question also passed a real Qwen3 4B run: catalog search returned five available guitars, displayed the three lowest final prices and did not fabricate a budget. The run took **83.56 seconds**; this routing fix does not resolve inference latency. The full answer, tool references and three passing checks are recorded in [the recommendation report](evidence/recommendation_after_routing.json).
+
+## Currency rendering and avatar contrast
+
+Streamlit interprets paired dollar signs as math delimiters, corrupting replies with multiple BRL amounts. The shared chat display formatter now escapes dollar signs and preserves line breaks in price quotes and order summaries. It covers user messages, streamed/final answers, saved chats and recorded examples without rewriting original histories, evidence, monetary values or Markdown downloads.
+
+Custom material avatars now explicitly use the selected palette's text color, overriding the native light-theme icon color that remained dark against dark-mode backgrounds. Avatar surfaces and borders use the same palette. The installed frontend confirms these icons receive an explicit native color, requiring the scoped override.
+
+All **140 tests passed**. AppTest checks that original/final BRL prices and discount emphasis reach the renderer with literal currency markup in both themes, that quote lines remain separate and that persisted amounts stay unchanged. Existing recorded-conversation and partial-response tests also pass. These are functional checks; final visual appearance remains subject to browser review. No new model run was needed for these presentation fixes.
