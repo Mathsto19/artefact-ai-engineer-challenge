@@ -376,3 +376,9 @@ All **140 tests passed**. The recorded-conversation AppTest verifies every techn
 The chat composer has an independently painted inner wrapper, and the installed Streamlit 1.66 selectbox uses React Aria components rather than the older Base Web selectors. Their native light surfaces caused the reported white input frame and dropdown arrow area. Scoped palette rules now cover the chat wrapper, selectbox group/input/buttons, dropdown surface, hover and focus borders. The textarea uses a transparent background within its themed wrapper.
 
 All **140 tests passed**, including existing theme switching/navigation checks. The installed frontend structure was inspected to identify the native wrappers. Browser screenshots are still needed to confirm the final visual result; these checks do not assert visual approval.
+
+## Bottom-anchored message composer
+
+The message input now lives at the Streamlit main root, enabling its native bottom-anchored mode. Previously it was inside the conversation column, where Streamlit renders it inline; newly submitted messages and generation status therefore appeared below the input. Chat rendering remains in the conversation area, while the composer stays in the native bottom region. Read-only recordings still omit the composer.
+
+All **140 tests passed**. AppTest now verifies the input's native `is_auto_positioned_at_bottom` flag before/after a streamed exchange and when switching themes, alongside existing navigation, history and scenario checks. No live inference was needed for this layout fix.

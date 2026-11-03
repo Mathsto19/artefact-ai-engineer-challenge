@@ -178,12 +178,14 @@ class StreamlitUITests(unittest.TestCase):
             return 'Resposta concluída', []
         with patch('zubumafu.streamlit_ui.respond', side_effect=backend):
             app = AppTest.from_file(APP).run(timeout=15)
+            self.assertTrue(app.chat_input[0].proto.is_auto_positioned_at_bottom)
             app.chat_input[0].set_value('Pode me ajudar?').run(timeout=15)
             self.assertFalse(app.exception)
             messages = self.store.messages(app.session_state['chat_id'])
             self.assertEqual([item['content'] for item in messages],
                              ['Pode me ajudar?', 'Resposta concluída'])
             self.assertEqual(len(app.chat_message), 2)
+            self.assertTrue(app.chat_input[0].proto.is_auto_positioned_at_bottom)
 
     def test_navigation_can_always_reopen_in_both_themes_without_losing_selection(self):
         with patch('zubumafu.streamlit_ui.respond') as backend:
@@ -194,6 +196,7 @@ class StreamlitUITests(unittest.TestCase):
             for theme in ('Escuro', 'Claro'):
                 app.selectbox(key='ui_theme').set_value(theme).run(timeout=15)
                 self.assertFalse(app.exception)
+                self.assertTrue(app.chat_input[0].proto.is_auto_positioned_at_bottom)
                 self.assertEqual(len(app.chat_message), 2)
                 app.button(key='toggle_navigation').click().run(timeout=15)
                 self.assertEqual(app.button(key='toggle_navigation').label, 'Abrir conversas')

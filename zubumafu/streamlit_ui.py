@@ -119,9 +119,14 @@ def main() -> None:
                 render_navigation(store, switch_chat)
     else:
         content = st.container()
+    # At the main root Streamlit anchors the composer to the viewport bottom.
+    # Inside the conversation column it becomes inline and precedes new replies.
+    question = None
+    if st.session_state.get("recorded_example") not in EXAMPLE_BY_KEY:
+        question = st.chat_input("Escreva sua mensagem para o Zubumafu...", key="message_input")
     with content:
         with st.container(key="conversation_content"):
-            render_conversation(store, switch_chat)
+            render_conversation(store, switch_chat, question)
 
 
 def render_navigation(store, switch_chat) -> None:
@@ -174,7 +179,7 @@ def render_navigation(store, switch_chat) -> None:
         st.caption("As mensagens, inclusive e-mails digitados, são salvas localmente sem criptografia. Exclua conversas sensíveis quando terminar.")
 
 
-def render_conversation(store, switch_chat) -> None:
+def render_conversation(store, switch_chat, question=None) -> None:
     conversation = store.get(st.session_state.chat_id)
     scenario = SCENARIO_BY_KEY.get(conversation["scenario_id"]) if conversation["kind"] == "test" else None
     st.markdown("""
@@ -236,7 +241,6 @@ def render_conversation(store, switch_chat) -> None:
             else:
                 st.markdown(chat_markdown(message["content"]))
 
-    question = st.chat_input("Escreva sua mensagem para o Zubumafu...")
     queued = st.session_state.pop("queued_question", None)
     question = question or queued
     if question:
