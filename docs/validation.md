@@ -328,3 +328,11 @@ All four acceptance scripts used the real streaming SDK adapter (via its progres
 | Order number / email / verified order | 16/16 including two denials | 3.68 / 14.43 / 6.12 s; denials 13.31 / 13.81 s | [orders](evidence/orders_after_responsiveness.json) |
 
 Historical order R$ 359.00, absent tracking/estimate, generic denials, non-cumulative PIX and section 4/page 4 references were preserved. Public evidence contains no raw reasoning or full emails. This increment fixes the greeting delay and makes ongoing work/output visible; it does **not** resolve all Qwen inference latency or establish universal grounding. Broader latency improvements require separate measured work. Earlier recorded sidebar examples remain immutable historical conversations.
+
+## Dark mode, app navigation and input variants
+
+The user reported the native sidebar still could not be reopened. Replaced that dependency with an application-owned navigation column and an always-rendered **Abrir conversas / Ocultar conversas** button. Light/dark/system selection remains available at the top while navigation is hidden. Palettes style foregrounds/backgrounds consistently; `?theme=dark` restores dark mode on reload and system mode follows the browser's preference.
+
+The full suite passed **138 tests**. AppTest toggled navigation closed/open in both light and dark modes without losing the selected conversation/messages, exercised controls on the read-only order recording, and verified restoration/persistence of theme through the URL. It also reran the existing scenario, deletion, evidence, streaming and history checks. These are functional checks, not connected-browser visual approval.
+
+New input tests confirm immediate handling of `ui`, `oiii`, `td bm` and other bounded greeting variants without inference; common instrument/policy abbreviations still require the correct tool; compound typo greetings cannot authorize invented prices; and a customer's `pixx@example.invalid` email reaches order verification unchanged despite the intent alias for `pixx`. No new live-model claim or latency improvement is attributed to these UI/intent changes. The original sources, recorded examples and inference configuration were preserved.

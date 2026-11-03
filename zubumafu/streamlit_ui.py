@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 
 from .agent import respond
+from .ui_theme import THEMES, theme_css
 from .conversations import ConversationStore, DEFAULT_DB
 from .demo_scenarios import SCENARIOS, SCENARIO_BY_KEY
 from .response_quality import strip_emojis
@@ -63,64 +64,27 @@ def show_recorded_example(key: str) -> None:
 
 def main() -> None:
     st.set_page_config(page_title="Zubumafu | Empório da Música", page_icon=":material/graphic_eq:",
-                       layout="wide", initial_sidebar_state="expanded")
+                       layout="wide", initial_sidebar_state="collapsed")
 
-    st.markdown("""
-    <style>
-        :root { color-scheme: light; }
-        .stApp { background: #f4f7f6; color: #18332f; }
-        [data-testid="stHeader"] { background: #f4f7f6; }
-        [data-testid="stExpandSidebarButton"] {
-            color: #116b5b; background: #fff; border: 1px solid #b8cdc3;
-        }
-        [data-testid="stMainBlockContainer"] {
-            max-width: 1120px; padding: 4.5rem 2.5rem 4rem;
-        }
-        [data-testid="stSidebar"] { background: #fff; border-right: 1px solid #dde6e2; }
-        [data-testid="stSidebarUserContent"] { padding-top: 1.5rem; }
-        [data-testid="stSidebar"] .stButton > button {
-            border-radius: 8px; justify-content: flex-start;
-            text-align: left; min-height: 2.65rem;
-        }
-        .stButton > button { border-radius: 8px; }
-        .stButton > button[kind="primary"] {
-            background: #116b5b; border-color: #116b5b; color: #fff;
-        }
-        .stButton > button[kind="secondary"] {
-            background: #fff; border-color: #d7e2dd; color: #18332f;
-        }
-        .stButton > button:hover { border-color: #116b5b; }
-        .zubu-banner {
-            border-bottom: 1px solid #dde6e2;
-            padding: 0 0 1.25rem; margin-bottom: 1.5rem;
-        }
-        .zubu-banner h2 { color: #18332f; margin: 0; font-size: 1.35rem; }
-        .zubu-banner p { color: #526b64; margin: .4rem 0 0; font-size: .95rem; }
-        .zubu-sidebar-title { color: #116b5b; font-weight: 750; font-size: 1.5rem; }
-        [data-testid="stCaptionContainer"] { color: #526b64; }
-        [data-testid="stChatMessage"] {
-            background: #fff; color: #18332f;
-            border-radius: 12px; border: 1px solid #dde6e2;
-            padding: 1rem; margin-bottom: .75rem;
-        }
-        [data-testid="stBottom"], [data-testid="stBottomBlockContainer"] {
-            background: #f4f7f6;
-        }
-        [data-testid="stBottomBlockContainer"] { max-width: 1120px; margin: auto; }
-        [data-testid="stChatInput"] {
-            background: #fff; border: 1px solid #b8cdc3; border-radius: 12px;
-        }
-        [data-testid="stChatInput"] textarea { color: #18332f; caret-color: #116b5b; }
-        [data-testid="stChatInput"] textarea::placeholder { color: #526b64; opacity: 1; }
-        [data-testid="stExpander"] { background: #fff; border-radius: 8px; }
-        ::selection { background: #c9e4d9; color: #18332f; }
-        @media (max-width: 720px) {
-            [data-testid="stMainBlockContainer"] { padding: 4.25rem 1rem 3rem; }
-            .zubu-banner h2 { font-size: 1.15rem; }
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    st.session_state.setdefault("navigation_open", True)
+    if "ui_theme" not in st.session_state:
+        requested_theme = st.query_params.get("theme", "system")
+        st.session_state.ui_theme = next((name for name, value in THEMES.items()
+                                         if value == requested_theme), "Sistema")
 
+    def save_theme() -> None:
+        st.query_params["theme"] = THEMES[st.session_state.ui_theme]
+
+    with st.container(key="app_controls"):
+        navigation_control, theme_control = st.columns([3, 1], vertical_alignment="bottom")
+        with navigation_control:
+            if st.button("Ocultar conversas" if st.session_state.navigation_open else "Abrir conversas",
+                         key="toggle_navigation"):
+                st.session_state.navigation_open = not st.session_state.navigation_open
+                st.rerun()
+        with theme_control:
+            st.selectbox("Tema", list(THEMES), key="ui_theme", on_change=save_theme)
+    st.markdown(theme_css(st.session_state.ui_theme), unsafe_allow_html=True)
 
     @st.cache_resource
     def get_store(path: str) -> ConversationStore:
@@ -144,56 +108,69 @@ def main() -> None:
         st.session_state.pop("queued_question", None)
 
 
-    with st.sidebar:
-        st.markdown('<span class="zubu-sidebar-title">Zubumafu</span>', unsafe_allow_html=True)
-        st.caption("Empório da Música")
-        if st.button("Nova conversa", key="new_chat", type="primary", use_container_width=True):
-            switch_chat(store.create())
+    if st.session_state.navigation_open:
+        navigation, content = st.columns([1, 3], gap="large")
+        with navigation:
+            with st.container(key="conversation_navigation"):
+                render_navigation(store, switch_chat)
+    else:
+        content = st.container()
+    with content:
+        with st.container(key="conversation_content"):
+            render_conversation(store, switch_chat)
+
+
+def render_navigation(store, switch_chat) -> None:
+    st.markdown('<span class="zubu-sidebar-title">Zubumafu</span>', unsafe_allow_html=True)
+    st.caption("Empório da Música")
+    if st.button("Nova conversa", key="new_chat", type="primary", use_container_width=True):
+        switch_chat(store.create())
+        st.rerun()
+
+    st.markdown("#### Minhas conversas")
+    st.caption("Exemplos registrados para avaliação")
+    for example in EXAMPLES:
+        if st.button(example.title, key=f"recorded_{example.key}", use_container_width=True,
+                     type="primary" if st.session_state.get("recorded_example") == example.key else "secondary"):
+            st.session_state.recorded_example = example.key
+            st.session_state.confirm_delete = False
+            st.session_state.pop("queued_question", None)
             st.rerun()
 
-        st.markdown("#### Minhas conversas")
-        st.caption("Exemplos registrados para avaliação")
-        for example in EXAMPLES:
-            if st.button(example.title, key=f"recorded_{example.key}", use_container_width=True,
-                         type="primary" if st.session_state.get("recorded_example") == example.key else "secondary"):
-                st.session_state.recorded_example = example.key
-                st.session_state.confirm_delete = False
-                st.session_state.pop("queued_question", None)
+    chats = store.list_all()
+    personal_chats = [item for item in chats if item["kind"] == "personal"]
+    st.caption("Suas conversas")
+    if not personal_chats:
+        st.caption("Comece uma conversa para vê-la aqui.")
+    for item in personal_chats:
+        if st.button(strip_emojis(item['title']), key=f"chat_{item['id']}",
+                     use_container_width=True,
+                     type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
+            switch_chat(item["id"])
+            st.rerun()
+
+    st.markdown("#### Conversas de teste")
+    for item in (entry for entry in chats if entry["kind"] == "test"):
+        if st.button(strip_emojis(item['title']), key=f"test_chat_{item['id']}", use_container_width=True,
+                     type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
+            switch_chat(item["id"])
+            st.rerun()
+    with st.expander("Iniciar um teste"):
+        st.caption("Perguntas sugeridas; as respostas são geradas ao executar.")
+        for scenario in SCENARIOS:
+            if st.button(scenario.title, key=f"new_scenario_{scenario.key}", use_container_width=True):
+                switch_chat(store.create(kind="test", scenario_id=scenario.key,
+                                         title=scenario.title))
                 st.rerun()
 
-        chats = store.list_all()
-        personal_chats = [item for item in chats if item["kind"] == "personal"]
-        st.caption("Suas conversas")
-        if not personal_chats:
-            st.caption("Comece uma conversa para vê-la aqui.")
-        for item in personal_chats:
-            if st.button(strip_emojis(item['title']), key=f"chat_{item['id']}",
-                         use_container_width=True,
-                         type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
-                switch_chat(item["id"])
-                st.rerun()
-
-        st.markdown("#### Conversas de teste")
-        for item in (entry for entry in chats if entry["kind"] == "test"):
-            if st.button(strip_emojis(item['title']), key=f"test_chat_{item['id']}", use_container_width=True,
-                         type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
-                switch_chat(item["id"])
-                st.rerun()
-        with st.expander("Iniciar um teste"):
-            st.caption("Perguntas sugeridas; as respostas são geradas ao executar.")
-            for scenario in SCENARIOS:
-                if st.button(scenario.title, key=f"new_scenario_{scenario.key}", use_container_width=True):
-                    switch_chat(store.create(kind="test", scenario_id=scenario.key,
-                                             title=scenario.title))
-                    st.rerun()
-
-        st.divider()
-        st.caption("Histórico salvo neste computador.")
-        with st.expander("Sobre este protótipo"):
-            st.caption("Dados demonstrativos. Sem conexão com WhatsApp ou autenticação de produção.")
-            st.caption("As mensagens, inclusive e-mails digitados, são salvas localmente sem criptografia. Exclua conversas sensíveis quando terminar.")
+    st.divider()
+    st.caption("Histórico salvo neste computador.")
+    with st.expander("Sobre este protótipo"):
+        st.caption("Dados demonstrativos. Sem conexão com WhatsApp ou autenticação de produção.")
+        st.caption("As mensagens, inclusive e-mails digitados, são salvas localmente sem criptografia. Exclua conversas sensíveis quando terminar.")
 
 
+def render_conversation(store, switch_chat) -> None:
     conversation = store.get(st.session_state.chat_id)
     scenario = SCENARIO_BY_KEY.get(conversation["scenario_id"]) if conversation["kind"] == "test" else None
     st.markdown("""

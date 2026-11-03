@@ -13,6 +13,7 @@ from .policies import search_store_policies
 from .pricing import get_product_pricing
 from .orders import bound_order_lookup, get_order_status, order_context, render_order_result
 from .persona import SYSTEM_PROMPT
+from .input_understanding import is_greeting, normalize_intent
 from .response_quality import (clean_model_answer, outside_scope, render_catalog, render_pricing,
                                requested_budget, referenced_strings, lookup_referenced_strings)
 
@@ -48,8 +49,7 @@ def _respond(
     The caller owns the visible conversation history. Ollama message objects and
     tool responses are local to this one call, not persisted between sessions.
     """
-    greeting = ' '.join(re.sub(r'[^\w\s]', '', _normalize(user_message)).split())
-    if re.fullmatch(r'(oi+|oie+|ola+|bom dia|boa tarde|boa noite|e ai)( zubumafu)?( tudo (bem|bom))?', greeting):
+    if is_greeting(user_message):
         return ("Oi! Como posso ajudar?" if history else
                 "Oi! Sou o Zubumafu, assistente do Empório da Música. Como posso ajudar?"), []
     if outside_scope(user_message):
@@ -335,7 +335,7 @@ def _visible_content(content: str) -> str:
 
 
 def _requires_catalog_lookup(message: str) -> bool:
-    normalized = _normalize(message)
+    normalized = normalize_intent(message)
     return any(token in normalized for token in (
         "preco", "custa", "estoque", "disponiv", "catalogo", "r$",
         "violao", "violoes", "guitarra", "ukulele", "baixo", "bateria",
@@ -346,7 +346,7 @@ def _requires_catalog_lookup(message: str) -> bool:
 
 
 def _requires_policy_lookup(message: str) -> bool:
-    normalized = _normalize(message)
+    normalized = normalize_intent(message)
     return any(token in normalized for token in (
         "devol", "troca", "arrepend", "defeit", "garantia", "horar",
         "funcionamento", "endereco", "onde fica", "frete", "entrega",
@@ -357,7 +357,7 @@ def _requires_policy_lookup(message: str) -> bool:
 
 
 def _required_tool(message: str, history: list[dict[str, str]]) -> str | None:
-    normalized = _normalize(message)
+    normalized = normalize_intent(message)
     # Product prices can be grounded in either deterministic catalog prices or
     # the dedicated pricing tool. General payment policy still needs the PDF.
     policy_subject = any(token in normalized for token in (

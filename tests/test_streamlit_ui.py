@@ -147,6 +147,46 @@ class StreamlitUITests(unittest.TestCase):
                              ['Pode me ajudar?', 'Resposta concluída'])
             self.assertEqual(len(app.chat_message), 2)
 
+    def test_navigation_can_always_reopen_in_both_themes_without_losing_selection(self):
+        with patch('zubumafu.streamlit_ui.respond') as backend:
+            app = AppTest.from_file(APP).run(timeout=15)
+            personal_id = app.session_state['chat_id']
+            self.store.add_exchange(personal_id, 'Minha pergunta', 'Minha resposta')
+            app.button(key=f'chat_{personal_id}').click().run(timeout=15)
+            for theme in ('Escuro', 'Claro'):
+                app.selectbox(key='ui_theme').set_value(theme).run(timeout=15)
+                self.assertFalse(app.exception)
+                self.assertEqual(len(app.chat_message), 2)
+                app.button(key='toggle_navigation').click().run(timeout=15)
+                self.assertEqual(app.button(key='toggle_navigation').label, 'Abrir conversas')
+                self.assertFalse(app.session_state['navigation_open'])
+                self.assertFalse(any(button.key == 'new_chat' for button in app.button))
+                self.assertEqual(len(app.chat_message), 2)
+                self.assertEqual(app.selectbox(key='ui_theme').value, theme)
+                app.button(key='toggle_navigation').click().run(timeout=15)
+                self.assertTrue(app.session_state['navigation_open'])
+                self.assertEqual(app.button(key='toggle_navigation').label, 'Ocultar conversas')
+                self.assertTrue(any(button.key == f'chat_{personal_id}' for button in app.button))
+                self.assertEqual(app.session_state['chat_id'], personal_id)
+                self.assertEqual(self.store.messages(personal_id)[-1]['content'], 'Minha resposta')
+            backend.assert_not_called()
+
+    def test_theme_survives_query_link_and_navigation_controls_exist_on_recordings(self):
+        with patch('zubumafu.streamlit_ui.respond') as backend:
+            app = AppTest.from_file(APP)
+            app.query_params['theme'] = 'dark'
+            app.run(timeout=15)
+            self.assertEqual(app.selectbox(key='ui_theme').value, 'Escuro')
+            app.button(key='recorded_orders').click().run(timeout=15)
+            app.button(key='toggle_navigation').click().run(timeout=15)
+            self.assertEqual(app.button(key='toggle_navigation').label, 'Abrir conversas')
+            self.assertEqual(len(app.chat_message), 6)
+            app.selectbox(key='ui_theme').set_value('Claro').run(timeout=15)
+            self.assertEqual(app.query_params['theme'], 'light')
+            self.assertEqual(len(app.chat_message), 6)
+            self.assertEqual(len(app.chat_input), 0)
+            backend.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

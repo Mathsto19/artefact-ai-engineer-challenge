@@ -86,6 +86,14 @@ Commercial, order and explicit return-clarification drafts remain private. After
 
 The original `qwen3:4b` and its stored template remain unchanged. A request-prefix experiment and a temporary empty-think template experiment still emitted reasoning markup and were not adopted; the temporary model alias was removed. `think=False` and `/no_think` remain requests, not proof of disabled generation. General-model latency remains a limitation despite fast greetings, shorter acknowledgements and earlier verified output. See the validation log for measured limits. Streaming aggregation follows [Ollama's tool-calling protocol](https://docs.ollama.com/capabilities/tool-calling); the attempted empty-block approach is described in [Qwen's non-thinking instructions](https://qwen.readthedocs.io/en/stable/inference/transformers.html).
 
+## Theme choice and app-owned navigation
+
+The user reported that the earlier native-toolbar adjustment still did not make the sidebar reopen control available. The conversation navigation now uses a regular application column, with a real **Abrir conversas / Ocultar conversas** button in an always-rendered top control area. It does not depend on Streamlit's native collapsed-sidebar state. Hiding/reopening navigation retains the selected thread/recording and messages; the native header is unused. The inline conversation input stays within the conversation column.
+
+The same top area provides light, dark and system mode. Palettes use explicit matching foreground/background variables across forms, messages, navigation and source details. System mode uses the browser's `prefers-color-scheme`; explicit selections are saved in the theme URL parameter for refresh/bookmark continuity. Mode changes do not write to chat history or run inference. Original message/evidence storage is unaffected.
+
+Small spelling/abbreviation aliases are applied only to greeting/intent recognition. They do not rewrite original customer input, perform fuzzy identity matching or alter order/email verification. The LLM still receives the original question; deterministic tool validation and source requirements remain in place. Unknown product identities should be clarified rather than silently corrected.
+
 ## Persona
 
 Zubumafu is friendly, patient, musically knowledgeable, professional, and warm without being effusive. It adapts explanations to the customer's expertise. In complaints it acknowledges frustration, stays calm, avoids forced humor, and gives a concrete next step. It does not claim actions or verification that did not occur.
