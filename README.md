@@ -1,4 +1,4 @@
-# Zubumafu — Music Store AI Assistant
+# Zubumafu - Music Store AI Assistant
 
 **Status: early functional prototype; not ready for delivery.**
 
@@ -46,6 +46,8 @@ The **Tema** selector at the top offers **Sistema**, **Claro** and **Escuro**, i
 Simple standalone greetings return immediately from a Python template without inference; a greeting combined with a product/policy question still follows the normal lookup path. During inference the interface displays real workflow stages and elapsed time, updated from streamed backend activity. Recognized general musical explanations can display final text incrementally after the reasoning delimiter. Commercial/order replies never stream model drafts: verified Python-rendered text appears as soon as its source lookup completes, while the short tool-result acknowledgement finishes. No artificial typing delays or reasoning text are displayed. Partial output is not stored; only the completed exchange is saved.
 
 Intent recognition tolerates selected common variants, such as standalone `ui`/`oiii`, `td bm`, `vcs`, `qto`, `violau` and `devouver`. This is a bounded alias map, not universal spelling correction. Original messages, product names, prices, order numbers and emails are not rewritten for lookup; unfamiliar/ambiguous model names still require clarification. A compound typo greeting cannot bypass required commercial source checks.
+
+Visible replies, history/metadata display and Markdown exports omit the long dash U+2014 and decorative emojis. Editorial Markdown uses the same punctuation convention. Original JSON evidence and supplied CSV/PDF sources retain their original content; presentation formatting is applied without rewriting those records.
 
 **Local-history privacy:** messages, including emails typed for a demo order, are stored unencrypted in `.local/conversations.sqlite3`. Titles redact emails; saved traces use a metadata whitelist and exclude raw tool payloads and reasoning. The folder and SQLite files are ignored by Git. This is a single-user demonstration, without accounts or production authentication. Use a trusted machine. Chat deletion is logical database deletion, not guaranteed forensic erasure from disk or backups. History created in this interface survives application/process restarts; earlier memory-only sessions are not automatically imported.
 

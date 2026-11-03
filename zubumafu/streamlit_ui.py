@@ -16,7 +16,7 @@ from .agent import respond
 from .ui_theme import THEMES, theme_css
 from .conversations import ConversationStore, DEFAULT_DB
 from .demo_scenarios import SCENARIOS, SCENARIO_BY_KEY
-from .response_quality import strip_emojis
+from .response_quality import clean_display_text, clean_display_value
 from .recorded_examples import EXAMPLES, EXAMPLE_BY_KEY, load_example, recorded_date, as_markdown
 
 logger = logging.getLogger(__name__)
@@ -28,12 +28,12 @@ def show_trace(trace):
     with st.expander("Fontes e ferramentas consultadas"):
         for item in trace:
             pages = f" · páginas {item['pages']}" if item.get("pages") else ""
-            st.caption(f"{item['tool']} · {item['status']}{pages}")
+            st.caption(clean_display_text(f"{item['tool']} · {item['status']}{pages}"))
             details = {key: item[key] for key in ('source', 'sources', 'filters', 'references',
                        'ambiguities', 'pricing', 'order_id', 'reply_origin', 'invoked_by',
                        'argument_overrides') if item.get(key) is not None}
             if details:
-                st.json(details)
+                st.json(clean_display_value(details))
 
 
 def show_recorded_example(key: str) -> None:
@@ -55,9 +55,9 @@ def show_recorded_example(key: str) -> None:
                        key=f"download_recorded_{key}")
     for turn in recording["turns"]:
         with st.chat_message("Cliente", avatar=":material/person:"):
-            st.markdown(strip_emojis(turn["question"]))
+            st.markdown(clean_display_text(turn["question"]))
         with st.chat_message("Zubumafu", avatar=":material/graphic_eq:"):
-            st.markdown(strip_emojis(turn["answer"]))
+            st.markdown(clean_display_text(turn["answer"]))
             st.caption(f"Tempo registrado: {turn['elapsed_seconds']:.2f} s")
             show_trace(turn.get("trace"))
 
@@ -143,7 +143,7 @@ def render_navigation(store, switch_chat) -> None:
     if not personal_chats:
         st.caption("Comece uma conversa para vê-la aqui.")
     for item in personal_chats:
-        if st.button(strip_emojis(item['title']), key=f"chat_{item['id']}",
+        if st.button(clean_display_text(item['title']), key=f"chat_{item['id']}",
                      use_container_width=True,
                      type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
             switch_chat(item["id"])
@@ -151,7 +151,7 @@ def render_navigation(store, switch_chat) -> None:
 
     st.markdown("#### Conversas de teste")
     for item in (entry for entry in chats if entry["kind"] == "test"):
-        if st.button(strip_emojis(item['title']), key=f"test_chat_{item['id']}", use_container_width=True,
+        if st.button(clean_display_text(item['title']), key=f"test_chat_{item['id']}", use_container_width=True,
                      type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
             switch_chat(item["id"])
             st.rerun()
@@ -185,7 +185,7 @@ def render_conversation(store, switch_chat) -> None:
         return
     header, remove_column = st.columns([5, 1], vertical_alignment="center")
     with header:
-        st.subheader(("Teste · " if scenario else "") + strip_emojis(conversation["title"]))
+        st.subheader(("Teste · " if scenario else "") + clean_display_text(conversation["title"]))
         if scenario:
             st.caption("Cenário de validação: respostas reais só aparecem após executar a pergunta.")
     with remove_column:
@@ -226,7 +226,7 @@ def render_conversation(store, switch_chat) -> None:
     for message in messages:
         with st.chat_message("Zubumafu" if message["role"] == "assistant" else "Você",
                              avatar=":material/graphic_eq:" if message["role"] == "assistant" else ":material/person:"):
-            st.markdown(strip_emojis(message["content"]))
+            st.markdown(clean_display_text(message["content"]))
             show_trace(message.get("trace"))
 
     question = st.chat_input("Escreva sua mensagem para o Zubumafu...")
@@ -235,7 +235,7 @@ def render_conversation(store, switch_chat) -> None:
     if question:
         prior = [{"role": item["role"], "content": item["content"]} for item in messages]
         with st.chat_message("Você", avatar=":material/person:"):
-            st.markdown(strip_emojis(question))
+            st.markdown(clean_display_text(question))
         with st.chat_message("Zubumafu", avatar=":material/graphic_eq:"):
             status = st.status("Lendo sua mensagem", expanded=False)
             output = st.empty()
@@ -249,7 +249,7 @@ def render_conversation(store, switch_chat) -> None:
                 if event['type'] == 'stage':
                     current_stage = event['label']
                 if event['type'] == 'answer':
-                    output.markdown(strip_emojis(event['text']))
+                    output.markdown(clean_display_text(event['text']))
                 if event['type'] != 'progress' or elapsed - last_update >= .25:
                     status.update(label=f"{current_stage} · {elapsed:.1f} s")
                     last_update = elapsed
@@ -264,7 +264,7 @@ def render_conversation(store, switch_chat) -> None:
                     "Não consegui acessar o modelo local agora. Confira o Ollama e tente novamente.", []
                 )
                 status.update(label="Não consegui concluir a resposta", state="error", expanded=False)
-            answer = strip_emojis(answer)
+            answer = clean_display_text(answer)
             output.markdown(answer)
         try:
             store.add_exchange(st.session_state.chat_id, question, answer, trace)

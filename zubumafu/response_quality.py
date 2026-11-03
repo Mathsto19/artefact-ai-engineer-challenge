@@ -55,7 +55,7 @@ def render_catalog(payload: dict[str, Any]) -> str:
         descriptors.append(f"{item['stock_quantity']} unidade(s) no estoque demonstrativo" if available else "sem disponibilidade no estoque demonstrativo")
         if item.get("pix_non_cumulative"):
             descriptors.append("sem desconto PIX adicional: os descontos não acumulam")
-        lines.append(f"- **{name}** — {' · '.join(descriptors)}")
+        lines.append(f"- **{name}**: {' · '.join(descriptors)}")
 
     budget = Decimal(str(filters.get('max_price_brl', '0')))
     if budget > 0:
@@ -132,7 +132,7 @@ def referenced_strings(message: str, history: list[dict]) -> dict | None:
     previous = next((item['content'] for item in reversed(history[-4:]) if item.get('role') == 'assistant'), '')
     if not material or not previous.startswith('Encontrei opções do catálogo, ordenadas por preço final:'):
         return None
-    names = re.findall(r'^- \*\*(.+?)\*\* — ', previous, flags=re.MULTILINE)[:3]
+    names = re.findall(r'^- \*\*(.+?)\*\*(?::| (?:\u2014|-)) ', previous, flags=re.MULTILINE)[:3]
     customer = next((item['content'] for item in reversed(history[-4:]) if item.get('role') == 'user'), '')
     method = 'pix' if 'pix' in _normalize(customer) and 'sem pix' not in _normalize(customer) else 'standard'
     return {'names': names, 'material': material, 'budget': requested_budget(customer), 'payment_method': method} if names else None
@@ -181,6 +181,22 @@ def strip_emojis(content: str) -> str:
     return _EMOJI.sub("", content).strip()
 
 
+def clean_display_text(content: str) -> str:
+    """Apply the requested punctuation and emoji style to visible text."""
+    return strip_emojis(content.replace('\u2014', '-'))
+
+
+def clean_display_value(value):
+    """Format display metadata without changing stored/source tool payloads."""
+    if isinstance(value, str):
+        return clean_display_text(value)
+    if isinstance(value, list):
+        return [clean_display_value(item) for item in value]
+    if isinstance(value, dict):
+        return {key: clean_display_value(item) for key, item in value.items()}
+    return value
+
+
 def clean_model_answer(content: str) -> str:
     """Strip rendered thought tags, repeated boilerplate and all emojis."""
     content = re.sub(r"(?is)<think\b[^>]*>.*?</think\s*>", "", content or "")
@@ -194,4 +210,4 @@ def clean_model_answer(content: str) -> str:
             saw_invitation = True
         lines.append(line)
     cleaned = "\n".join(lines).strip()
-    return strip_emojis(cleaned)
+    return clean_display_text(cleaned)

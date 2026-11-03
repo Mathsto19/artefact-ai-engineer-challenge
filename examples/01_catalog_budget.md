@@ -41,11 +41,11 @@ Which available acoustic guitars cost up to R$ 1,000?
 
 Hi! 😊 Here are some affordable acoustic guitars up to R$ 1,000 that are great for beginners:
 
-1. **Tagima Memphis AC-39 Nylon Natural** — R$ 429.90 🎸
+1. **Tagima Memphis AC-39 Nylon Natural** - R$ 429.90 🎸
    *Soft nylon strings, ideal for someone starting out.*
-2. **Rozini RC-104 Nylon Estudante** — R$ 459.90 🌟
+2. **Rozini RC-104 Nylon Estudante** - R$ 459.90 🌟
    *Brazilian woods and an affordable price for study.*
-3. **Yamaha C40 Nylon Natural** — R$ 599.90 💡
+3. **Yamaha C40 Nylon Natural** - R$ 599.90 💡
    *Spruce top with a balanced sound for beginners.*
 
 Would you like more details about a particular one? 😊

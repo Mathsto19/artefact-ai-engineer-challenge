@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
+from .response_quality import clean_display_text
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -87,9 +88,11 @@ def as_markdown(recording: dict) -> str:
              f"Recorded: {recording['recorded_at']} | Model: {recording['model']}", "",
              f"Evidence: `{example.evidence_file}`", "", example.review_note, "",
              "Original Brazilian Portuguese messages follow. This is a read-only record "
-             "of an earlier execution, not a new inference or live stock/tracking query.", ""]
+             "of an earlier execution, not a new inference or live stock/tracking query. "
+             "Presentation punctuation and emoji formatting are normalized; original "
+             "messages remain in the referenced JSON evidence.", ""]
     for number, turn in enumerate(recording["turns"], start=1):
         lines.extend([f"## Turn {number}", "", "### Customer", "", turn["question"], "",
                       "### Zubumafu", "", turn["answer"], "",
                       f"Observed elapsed time: {turn['elapsed_seconds']} seconds.", ""])
-    return "\n".join(lines)
+    return clean_display_text("\n".join(lines))

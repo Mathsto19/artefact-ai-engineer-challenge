@@ -57,7 +57,7 @@ class QualityTests(unittest.TestCase):
             self.assertIn("5% de desconto", reply)
 
     def test_cleanup_removes_thinking_duplicate_invitations_and_all_emoji(self):
-        model_reply = "<think>segredo da análise</think>Oi! 🎸😊 👨‍👩‍👧‍👦 🇧🇷 1️⃣\nSe quiser, posso detalhar.\nSe quiser, posso detalhar mais."
+        model_reply = "<think>segredo da análise</think>Oi!\u2014 Tudo bem? 🎸😊 👨‍👩‍👧‍👦 🇧🇷 1️⃣\nSe quiser, posso detalhar.\nSe quiser, posso detalhar mais."
         reply = clean_model_answer(model_reply)
         self.assertNotIn("segredo", reply)
         self.assertEqual(reply.count("Se quiser"), 1)
@@ -67,6 +67,7 @@ class QualityTests(unittest.TestCase):
         self.assertNotIn("\u200d", reply)
         self.assertNotIn("\ufe0f", reply)
         self.assertNotIn("\u20e3", reply)
+        self.assertNotIn("\u2014", reply)
 
     def test_catalog_agent_ignores_unsupported_model_superlatives_and_profile(self):
         attempts = []
@@ -191,6 +192,12 @@ class QualityTests(unittest.TestCase):
         self.assertEqual(trace[0]['filters']['max_price_brl'], '1000')
         self.assertEqual(trace[0]['invoked_by'], 'application_reference_lookup')
         self.assertEqual(attempts, [])
+        legacy = first.replace('**: ', '** '+chr(0x2014)+' ')
+        history[-1]['content'] = legacy
+        legacy_reply, legacy_trace = respond('Quais dessas opções têm cordas de aço?', history, chat_fn=chat)
+        self.assertIn('Shelby SN-100', legacy_reply)
+        self.assertEqual(legacy_trace[0]['matches'], 1)
+        self.assertNotIn(chr(0x2014), legacy_reply)
 
     def test_sdk_timeout_has_a_recoverable_answer(self):
         from httpx import ConnectTimeout

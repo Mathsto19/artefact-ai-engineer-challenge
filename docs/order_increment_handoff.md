@@ -1,4 +1,4 @@
-# Order lookup increment — integration handoff
+# Order lookup increment - integration handoff
 
 **Provenance note:** the sections below describe the incoming package before canonical integration. Its 40-test result is an upstream observation, not the current repository total. Canonical refinements, the 89-test regression suite and real-model acceptance are recorded in [validation.md](validation.md). The local/GitHub checkout remains authoritative.
 
@@ -27,8 +27,8 @@ All other files in the ZIP are pre-existing baseline material; **do not overwrit
 
 ## Local checks actually run
 
-- `python3 -B -m unittest discover -s tests -q` — **40 tests passed** on 2026-11-02 (16 order tests, plus 24 existing tests).
-- `git diff --check` — passed.
+- `python3 -B -m unittest discover -s tests -q` - **40 tests passed** on 2026-11-02 (16 order tests, plus 24 existing tests).
+- `git diff --check` - passed.
 - The tool was exercised with actual supplied CSV rows and a simulated Ollama tool-call cycle. This is **not** a real `qwen3:4b` execution.
 
 ## Pending after selective integration

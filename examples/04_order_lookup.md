@@ -1,10 +1,10 @@
-# Observed conversation 04 — Demonstrative order consultation
+# Observed conversation 04 - Demonstrative order consultation
 
 Recorded: **2026-11-02T18:29:28-03:00**. Actual original local `qwen3:4b` model through Ollama. The first three turns are one conversation; the last two are separate denial checks.
 
 Emails are replaced with `[REDACTED_EMAIL]` in questions and tool arguments. The registered email used in turn 3 matched the source; the email in the two denial cases deliberately did not. English translations are separate from the original Portuguese output, not additional model runs.
 
-## Turn 1 — 12.26 seconds
+## Turn 1 - 12.26 seconds
 
 **Customer (original, email redacted):**
 
@@ -14,15 +14,15 @@ Onde está meu pedido?
 
 Claro, posso consultar o registro do pedido. Qual é o número do pedido?
 
-**English translation — customer:**
+**English translation - customer:**
 
 Where is my order?
 
-**English translation — assistant:**
+**English translation - assistant:**
 
 Sure, I can consult the order record. What is the order number?
 
-## Turn 2 — 33.58 seconds
+## Turn 2 - 33.58 seconds
 
 **Customer (original, email redacted):**
 
@@ -32,15 +32,15 @@ Sure, I can consult the order record. What is the order number?
 
 Obrigado! Agora, qual é o e-mail cadastrado nesse pedido?
 
-**English translation — customer:**
+**English translation - customer:**
 
 11
 
-**English translation — assistant:**
+**English translation - assistant:**
 
 Thank you! Now, what is the email registered for that order?
 
-## Turn 3 — 14.61 seconds
+## Turn 3 - 14.61 seconds
 
 **Customer (original, email redacted):**
 
@@ -58,11 +58,11 @@ Conferi o registro demonstrativo do seu pedido:
 **Previsão de entrega registrada:** não consta no registro
 *Esses dados são históricos. A previsão não confirma o recebimento; não há rastreamento ao vivo.*
 
-**English translation — customer:**
+**English translation - customer:**
 
 [REDACTED_EMAIL]
 
-**English translation — assistant:**
+**English translation - assistant:**
 
 I checked the demonstration record for your order:
 **Order:** 11
@@ -74,7 +74,7 @@ I checked the demonstration record for your order:
 **Recorded estimated delivery:** not present in the record
 *These data are historical. The estimate does not confirm receipt; there is no live tracking.*
 
-## Separate check — wrong_email — 19.76 seconds
+## Separate check - wrong_email - 19.76 seconds
 
 **Customer (original, email redacted):**
 
@@ -84,15 +84,15 @@ Quero consultar o pedido 11, e-mail [REDACTED_EMAIL]
 
 Não consegui confirmar esse pedido com o número e o e-mail informados. Confira os dois dados e tente novamente, por favor.
 
-**English translation — customer:**
+**English translation - customer:**
 
 I want to consult order 11, email [REDACTED_EMAIL]
 
-**English translation — assistant:**
+**English translation - assistant:**
 
 I could not verify this order with the number and email provided. Please check both details and try again.
 
-## Separate check — nonexistent_order — 31.82 seconds
+## Separate check - nonexistent_order - 31.82 seconds
 
 **Customer (original, email redacted):**
 
@@ -102,11 +102,11 @@ Quero consultar o pedido 999999999999, e-mail [REDACTED_EMAIL]
 
 Não consegui confirmar esse pedido com o número e o e-mail informados. Confira os dois dados e tente novamente, por favor.
 
-**English translation — customer:**
+**English translation - customer:**
 
 I want to consult order 999999999999, email [REDACTED_EMAIL]
 
-**English translation — assistant:**
+**English translation - assistant:**
 
 I could not verify this order with the number and email provided. Please check both details and try again.
 

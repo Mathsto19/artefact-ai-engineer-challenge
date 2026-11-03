@@ -11,6 +11,7 @@ from streamlit.testing.v1 import AppTest
 
 from zubumafu.conversations import ConversationStore
 from zubumafu.recorded_examples import EXAMPLES, load_example
+from zubumafu.response_quality import clean_display_text
 
 
 APP = str(Path(__file__).resolve().parents[1] / "app.py")
@@ -104,8 +105,8 @@ class StreamlitUITests(unittest.TestCase):
                 self.assertFalse(any(button.key == 'delete_chat' for button in app.button))
                 rendered = '\n'.join(item.value for item in app.markdown)
                 for turn in load_example(example.key)['turns']:
-                    self.assertIn(turn['question'], rendered)
-                    self.assertIn(turn['answer'], rendered)
+                    self.assertIn(clean_display_text(turn['question']), rendered)
+                    self.assertIn(clean_display_text(turn['answer']), rendered)
                 self.assertEqual(self.store.list_all(), before)
                 self.assertEqual(self.store.messages(personal_id), [])
             backend.assert_not_called()

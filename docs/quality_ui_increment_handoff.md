@@ -1,4 +1,4 @@
-# Final quality review + messenger UI — selective integration handoff
+# Final quality review + messenger UI - selective integration handoff
 
 > Provenance: the 57-test results below describe the incoming older snapshot. Canonical integration preserved the previous 89 regressions and expanded the suite to 119 tests. See [validation.md](validation.md) for local AppTest/model results and remaining visual-review limits. The canonical entrypoint calls `main()` on each rerun; it does not rely on import side effects.
 
@@ -31,8 +31,8 @@ All other files in the ZIP are pre-existing baseline material. The original CSVs
 
 ## Verification actually executed
 
-- `python3 -B -m unittest discover -s tests -q` — **57 tests passed** in the old snapshot (40 preceding tests and 17 new tests).
-- `git diff --check` — check against changes in this snapshot before handoff.
+- `python3 -B -m unittest discover -s tests -q` - **57 tests passed** in the old snapshot (40 preceding tests and 17 new tests).
+- `git diff --check` - check against changes in this snapshot before handoff.
 - Code parsed with Python's `ast` without installing Streamlit.
 - The actual Streamlit UI and local Ollama/Qwen3 model were **not executed** here, and no latency reduction is claimed.
 - The SQLite tests use temporary databases and clean them up; no persisted demonstration conversations or full private emails are included in the package.

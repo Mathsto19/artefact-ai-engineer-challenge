@@ -336,3 +336,9 @@ The user reported the native sidebar still could not be reopened. Replaced that 
 The full suite passed **138 tests**. AppTest toggled navigation closed/open in both light and dark modes without losing the selected conversation/messages, exercised controls on the read-only order recording, and verified restoration/persistence of theme through the URL. It also reran the existing scenario, deletion, evidence, streaming and history checks. These are functional checks, not connected-browser visual approval.
 
 New input tests confirm immediate handling of `ui`, `oiii`, `td bm` and other bounded greeting variants without inference; common instrument/policy abbreviations still require the correct tool; compound typo greetings cannot authorize invented prices; and a customer's `pixx@example.invalid` email reaches order verification unchanged despite the intent alias for `pixx`. No new live-model claim or latency improvement is attributed to these UI/intent changes. The original sources, recorded examples and inference configuration were preserved.
+
+## Requested punctuation style
+
+Removed the long dash U+2014 from newly rendered catalog text and editorial Markdown. The persona prohibits it; shared display formatting also normalizes it in final replies, incremental events, saved-history display, provenance metadata and Markdown downloads. Original machine evidence and supplied CSV/PDF sources remain unchanged, while exports disclose presentation normalization. The catalog follow-up parser still recognizes historical separators, so older personal conversations retain working source lookups.
+
+The full **138 tests passed**, including long-dash removal during response cleanup, normalized exports with unchanged source evidence, and steel-string follow-ups from both new and historical catalog formatting. This is a presentation change; no new inference result or source/price claim is asserted.

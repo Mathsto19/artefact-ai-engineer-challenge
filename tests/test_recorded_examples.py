@@ -4,6 +4,7 @@ import json
 import unittest
 
 from zubumafu.recorded_examples import EXAMPLES, ROOT, as_markdown, load_example
+from zubumafu.response_quality import clean_display_text
 
 
 class RecordedExampleTests(unittest.TestCase):
@@ -17,9 +18,10 @@ class RecordedExampleTests(unittest.TestCase):
                 self.assertTrue(report['passed'])
                 self.assertEqual(recording['turns'], report['turns'][:example.turn_count])
                 exported = as_markdown(recording)
+                self.assertNotIn('\u2014', exported)
                 for turn in recording['turns']:
-                    self.assertIn(turn['question'], exported)
-                    self.assertIn(turn['answer'], exported)
+                    self.assertIn(clean_display_text(turn['question']), exported)
+                    self.assertIn(clean_display_text(turn['answer']), exported)
                 self.assertEqual((ROOT / example.evidence_file).read_bytes(), original)
 
     def test_order_record_preserves_redaction_and_excludes_independent_denials(self):

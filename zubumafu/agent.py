@@ -14,7 +14,7 @@ from .pricing import get_product_pricing
 from .orders import bound_order_lookup, get_order_status, order_context, render_order_result
 from .persona import SYSTEM_PROMPT
 from .input_understanding import is_greeting, normalize_intent
-from .response_quality import (clean_model_answer, outside_scope, render_catalog, render_pricing,
+from .response_quality import (clean_display_text, clean_model_answer, outside_scope, render_catalog, render_pricing,
                                requested_budget, referenced_strings, lookup_referenced_strings)
 
 
@@ -31,9 +31,14 @@ def respond(
     *, on_event: Callable[[dict], None] | None = None,
 ) -> tuple[str, list[dict[str, object]]]:
     """Reply with optional live workflow/verified-output events, never reasoning."""
-    emit = on_event or (lambda event: None)
+    def emit(event: dict) -> None:
+        if on_event:
+            if event['type'] == 'answer':
+                event = {**event, 'text': clean_display_text(event['text'])}
+            on_event(event)
     emit({'type': 'stage', 'label': 'Lendo sua mensagem'})
     reply, trace = _respond(user_message, history, chat_fn, emit)
+    reply = clean_display_text(reply)
     emit({'type': 'answer', 'text': reply, 'complete': True})
     return reply, trace
 

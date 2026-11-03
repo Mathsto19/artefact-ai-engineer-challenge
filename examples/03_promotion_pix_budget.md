@@ -1,10 +1,10 @@
-# Observed conversation 03 — Promotion, PIX and budget
+# Observed conversation 03 - Promotion, PIX and budget
 
 Recorded: **2026-11-02T17:03:17-03:00**. Model: original local `qwen3:4b`, through Ollama. This is an actual conversation, not a simulated model test.
 
 The Portuguese text below is the displayed output. The English translations are separate and retain the awkward/repetitive wording; they are not additional model runs.
 
-## Turn 1 — 62.22 seconds
+## Turn 1 - 62.22 seconds
 
 **Customer (original):**
 
@@ -20,11 +20,11 @@ O Kalani KAL-700T Tenor Natural está disponível com preço final de **R$ 323,1
 
 Tem 11 unidades em estoque. Quer saber mais sobre especificações ou outros modelos? 😊
 
-**English translation — customer:**
+**English translation - customer:**
 
 How much is the Kalani KAL-700T Tenor Natural?
 
-**English translation — assistant:**
+**English translation - assistant:**
 
 List price: R$ 359.00.
 
@@ -34,7 +34,7 @@ The Kalani KAL-700T Tenor Natural is available at a final price of **R$ 323.10**
 
 There are 11 units in stock. Would you like to know more about specifications or other models? 😊
 
-## Turn 2 — 101.95 seconds
+## Turn 2 - 101.95 seconds
 
 **Customer (original):**
 
@@ -50,11 +50,11 @@ Se quiser economizar, só é possível usar o PIX **sem desconto extra** (já es
 
 Quer saber como funciona o PIX aqui?
 
-**English translation — customer:**
+**English translation - customer:**
 
 And if I pay via PIX, is it cheaper?
 
-**English translation — assistant:**
+**English translation - assistant:**
 
 The final price of the **Kalani KAL-700T Tenor Natural** does not change when paying via PIX! 🎵
 
@@ -64,7 +64,7 @@ If you want to save, it is only possible to use PIX **without an extra discount*
 
 Would you like to know how PIX works here?
 
-## Turn 3 — 140.06 seconds
+## Turn 3 - 140.06 seconds
 
 **Customer (original):**
 
@@ -76,11 +76,11 @@ Sim, o Kalani KAL-700T Tenor Natural está dentro do orçamento de **R$ 340**! O
 
 Tem 11 unidades em estoque. Quer saber mais sobre especificações ou outros modelos? 😊
 
-**English translation — customer:**
+**English translation - customer:**
 
 Does that Kalani fit a R$ 340 budget?
 
-**English translation — assistant:**
+**English translation - assistant:**
 
 Yes, the Kalani KAL-700T Tenor Natural is within the **R$ 340** budget! The final price is **R$ 323.10** (with 10% off in the "Special Offer" promotion). 🎵
 
