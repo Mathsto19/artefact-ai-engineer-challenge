@@ -108,6 +108,13 @@ def theme_css(mode: str) -> str:
             margin-bottom: .3rem; flex-shrink: 0 !important;
         }
         .st-key-navigation_footer { padding-bottom: 0; }
+        .st-key-navigation_footer .st-key-toggle_navigation button[kind="secondary"] {
+            background: var(--z-surface) !important; border: 1px solid var(--z-border);
+            border-radius: 8px; min-height: 2.65rem;
+        }
+        .st-key-navigation_footer .st-key-toggle_navigation button[kind="secondary"]:hover {
+            background: var(--z-surface-alt) !important; border-color: var(--z-accent);
+        }
         .st-key-navigation_footer > [data-testid="stElementContainer"]:has([data-testid="stCaptionContainer"]) {
             padding-top: .6rem;
         }

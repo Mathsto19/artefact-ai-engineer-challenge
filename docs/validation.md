@@ -450,3 +450,5 @@ All **144 tests passed**, including delete/keep behavior. Browser appearance rem
 Reorganized navigation around explicit bordered sections: recorded examples, personal conversations, validation and preferences. The new-conversation action sits directly under the brand; Appearance and hide-navigation controls move to the preferences footer. Examples and histories use distinct labels and monochrome row icons, with a lateral accent marking the active conversation. Section padding and row spacing follow one consistent rhythm, replacing the disconnected blank spaces in the reported screenshot.
 
 All **144 tests passed**, including theme restoration, reopening navigation, selecting recorded/personal conversations and scenario execution. Automatic visual approval remains unavailable.
+
+The preferences footer's hide-navigation action now has an explicit outlined button surface, rounded corners and hover feedback matching Appearance. This is a scoped CSS adjustment; interaction behavior is unchanged, and the regression suite was not rerun solely for it.
