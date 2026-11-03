@@ -79,14 +79,12 @@ def main() -> None:
     def save_theme() -> None:
         st.query_params["theme"] = THEMES[st.session_state.ui_theme]
 
-    with st.container(key="app_controls"):
-        navigation_control, theme_control = st.columns([3, 1], vertical_alignment="bottom")
-        with navigation_control:
-            if st.button("Ocultar conversas" if st.session_state.navigation_open else "Abrir conversas",
-                         key="toggle_navigation"):
-                st.session_state.navigation_open = not st.session_state.navigation_open
-                st.rerun()
-        with theme_control:
+    with st.container(key="app_controls", horizontal=True, vertical_alignment="center"):
+        if st.button("Ocultar conversas" if st.session_state.navigation_open else "Abrir conversas",
+                     key="toggle_navigation", icon=":material/menu:"):
+            st.session_state.navigation_open = not st.session_state.navigation_open
+            st.rerun()
+        with st.popover("Aparência", icon=":material/contrast:"):
             st.selectbox("Tema", list(THEMES), key="ui_theme", on_change=save_theme)
     st.markdown(theme_css(st.session_state.ui_theme), unsafe_allow_html=True)
 
@@ -113,7 +111,7 @@ def main() -> None:
 
 
     if st.session_state.navigation_open:
-        navigation, content = st.columns([1, 3], gap="large")
+        navigation, content = st.columns([1, 3], gap="medium")
         with navigation:
             with st.container(key="conversation_navigation"):
                 render_navigation(store, switch_chat)
@@ -130,17 +128,18 @@ def main() -> None:
 
 
 def render_navigation(store, switch_chat) -> None:
-    st.markdown('<span class="zubu-sidebar-title">Zubumafu</span>', unsafe_allow_html=True)
-    st.caption("Empório da Música")
-    if st.button("Nova conversa", key="new_chat", type="primary", use_container_width=True):
+    st.markdown('''<div class="zubu-brand"><span class="zubu-sidebar-title">Zubumafu</span>
+                <span class="zubu-brand-subtitle">Empório da Música</span></div>''', unsafe_allow_html=True)
+    if st.button("Nova conversa", key="new_chat", type="primary", icon=":material/add:", use_container_width=True):
         switch_chat(store.create())
         st.rerun()
 
-    st.markdown("#### Minhas conversas")
-    st.caption("Exemplos registrados para avaliação")
+    st.markdown('<p class="zubu-nav-heading">Minhas conversas</p>', unsafe_allow_html=True)
+    st.markdown('<p class="zubu-nav-label">Exemplos para avaliação</p>', unsafe_allow_html=True)
     for example in EXAMPLES:
         if st.button(example.title, key=f"recorded_{example.key}", use_container_width=True,
-                     type="primary" if st.session_state.get("recorded_example") == example.key else "secondary"):
+                     type="primary" if st.session_state.get("recorded_example") == example.key else "secondary",
+                     help="Abrir conversa registrada, sem executar o modelo"):
             st.session_state.recorded_example = example.key
             st.session_state.confirm_delete = False
             st.session_state.pop("queued_question", None)
@@ -148,7 +147,7 @@ def render_navigation(store, switch_chat) -> None:
 
     chats = store.list_all()
     personal_chats = [item for item in chats if item["kind"] == "personal"]
-    st.caption("Suas conversas")
+    st.markdown('<p class="zubu-nav-label">Suas conversas</p>', unsafe_allow_html=True)
     if not personal_chats:
         st.caption("Comece uma conversa para vê-la aqui.")
     for item in personal_chats:
@@ -158,7 +157,7 @@ def render_navigation(store, switch_chat) -> None:
             switch_chat(item["id"])
             st.rerun()
 
-    st.markdown("#### Conversas de teste")
+    st.markdown('<p class="zubu-nav-heading">Conversas de teste</p>', unsafe_allow_html=True)
     for item in (entry for entry in chats if entry["kind"] == "test"):
         if st.button(clean_display_text(item['title']), key=f"test_chat_{item['id']}", use_container_width=True,
                      type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):

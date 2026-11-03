@@ -394,3 +394,19 @@ All **144 tests passed**. New tests verify real guitar results, no model invocat
 The native bottom composer now shares the main area's maximum width and horizontal padding. With navigation open on desktop, it uses the conversation column's width and right alignment, matching the 1:3 layout and large column gap. With navigation hidden it fills the available conversation width; narrow screens retain full-width input with reduced margins. Native bottom anchoring remains enabled.
 
 All **144 tests passed**, including bottom-position metadata, navigation/theme changes and real-catalog UI submission. This CSS adjustment requires user browser review for final visual alignment.
+
+## Messenger-style message alignment
+
+Customer messages now use right-aligned, content-sized green bubbles, with the customer avatar on the right. Zubumafu messages use left-aligned content-sized bubbles. Both have responsive maximum widths, wrapping and compact spacing, including existing evaluation recordings and streamed replies. The selectors use the installed frontend's accessible message labels rather than generated class names.
+
+Main and footer containers now enforce the same padding and maximum width against native responsive overrides; the desktop composer width override is explicit as well. The native footer's intermediate surface also follows the chosen theme. These changes address the reported remaining width mismatch while keeping bottom anchoring.
+
+All **144 tests passed**. This validates existing functional flows, not rendered pixel alignment; final appearance needs browser review.
+
+## Compact conversation navigation and composer alignment correction
+
+The navigation now uses compact left-aligned rows, a distinct new-conversation action, quieter active states, smaller section labels and a grouped brand header. Recorded examples, personal histories and test scenarios retain their separate functions and existing identifiers. The panel has a bounded scroll area that reserves space for the bottom composer. Theme selection moves into a compact Appearance popover beside the always-available navigation toggle, removing the large standalone selector from the header.
+
+The column gap is now medium (2rem). Inspection of the installed frontend revealed that native columns subtract the full gap from each flex basis and then share the remaining gap equally. The matching composer width is therefore `calc(75% - 1rem)`, correcting the previous proportional-gap approximation. Main/footer padding overrides and messenger bubble alignment are retained.
+
+All **144 tests passed**, including theme changes via the popover, reopening navigation, recorded examples, actual-catalog submission and preservation of bottom anchoring. Visual browser approval is still separate from these functional checks.
