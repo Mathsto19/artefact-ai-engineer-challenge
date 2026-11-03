@@ -372,6 +372,13 @@ def _required_tool(message: str, history: list[dict[str, str]]) -> str | None:
     product_context = _requires_catalog_lookup(message) or any(
         _requires_catalog_lookup(item.get("content", "")) for item in history[-4:]
     )
+    # A recommendation asks for catalog options, even when it mentions price.
+    # It does not identify a single model for the dedicated pricing tool.
+    if not policy_subject and _requires_catalog_lookup(message) and re.search(
+        r"\b(recomenda\w*|indic[ae]\w*|suger\w*|sugest\w*)\b|\b(bom preco|boa faixa de preco|bom custo beneficio)\b",
+        normalized,
+    ):
+        return "search_products"
     if not policy_subject and (
         any(token in normalized for token in ("custa", "preco"))
         or (product_context and any(token in normalized for token in ("pix", "desconto", "promoc", "mais barato")))

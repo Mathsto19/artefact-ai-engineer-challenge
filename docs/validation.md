@@ -348,3 +348,11 @@ The full **138 tests passed**, including long-dash removal during response clean
 Policy citation footers now appear inside the collapsed source/tool details instead of the visible answer body. The same display rule applies to incremental output, saved conversations and recorded evaluation examples. Original stored answers, evidence files and structured tool references remain intact. Citation-only legacy records still expose their source details even without a tool trace.
 
 All **138 tests passed**. AppTest verifies that the customer-facing answer excludes the footer, the expander contains its exact section/page citation, structured references remain accessible and the original persisted answer is preserved. This change does not claim new live-model validation.
+
+## Recommendations mentioning price
+
+Recommendation requests such as `me recomenda uma guitarra com um bom preço` now select catalog search before single-model pricing. Previously, the price keyword restricted the model to an exact-product lookup and could produce an irrelevant model-not-found reply. The persona also distinguishes subjective price preferences from product names and numeric budget limits.
+
+All **139 tests passed**, including catalog tool selection, real CSV matches and no invented budget for guitar/violão recommendation variants with an unrelated product in the prior history. Existing specific-model price and PIX follow-up tests remain passing.
+
+The exact reported question also passed a real Qwen3 4B run: catalog search returned five available guitars, displayed the three lowest final prices and did not fabricate a budget. The run took **83.56 seconds**; this routing fix does not resolve inference latency. The full answer, tool references and three passing checks are recorded in [the recommendation report](evidence/recommendation_after_routing.json).

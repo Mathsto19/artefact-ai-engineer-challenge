@@ -11,6 +11,30 @@ class PricingAgentTests(unittest.TestCase):
         {"role": "assistant", "content": "O Kalani custa R$ 323,10 em promoção."},
     ]
 
+    def test_price_recommendations_offer_catalog_instead_of_exact_model_lookup(self):
+        for question in ('me recomenda uma guitarra com um bom preço',
+                         'Me indica um violão com bom custo-benefício',
+                         'Quero uma guitarra com bom preço'):
+            with self.subTest(question=question):
+                calls = []
+
+                def chat(**kwargs):
+                    calls.append(kwargs)
+                    if len(calls) == 1:
+                        self.assertEqual([tool.__name__ for tool in kwargs['tools']], ['search_products'])
+                        category = 'violão' if 'violão' in question else 'guitarra'
+                        function = SimpleNamespace(name='search_products', arguments={'category': category})
+                        return SimpleNamespace(message=SimpleNamespace(content='', tool_calls=[SimpleNamespace(function=function)]))
+                    return SimpleNamespace(message=SimpleNamespace(content='OK', tool_calls=[]))
+
+                answer, trace = respond(question, self.history, chat_fn=chat)
+                self.assertIn('Encontrei opções', answer)
+                self.assertIn('R$', answer)
+                self.assertEqual(trace[0]['tool'], 'search_products')
+                self.assertEqual(trace[0]['filters']['query'], '')
+                self.assertEqual(trace[0]['filters']['max_price_brl'], '0')
+                self.assertGreater(trace[0]['matches'], 0)
+
     def test_pix_followup_receives_pricing_result_and_preserves_history(self):
         calls = []
 
