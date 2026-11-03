@@ -139,41 +139,44 @@ def render_navigation(store, switch_chat, save_theme) -> None:
         switch_chat(store.create())
         st.rerun()
 
-    st.markdown('<p class="zubu-nav-heading">Minhas conversas</p>', unsafe_allow_html=True)
-    st.markdown('<p class="zubu-nav-label">Exemplos para avaliação</p>', unsafe_allow_html=True)
-    for example in EXAMPLES:
-        if st.button(example.title, key=f"recorded_{example.key}", use_container_width=True,
-                     type="primary" if st.session_state.get("recorded_example") == example.key else "secondary"):
-            st.session_state.recorded_example = example.key
-            st.session_state.confirm_delete = False
-            st.session_state.pop("queued_question", None)
-            st.rerun()
+    with st.container(key="navigation_examples"):
+        st.markdown('<p class="zubu-nav-heading">Minhas conversas</p>', unsafe_allow_html=True)
+        st.markdown('<p class="zubu-nav-label">Exemplos para avaliação</p>', unsafe_allow_html=True)
+        for example in EXAMPLES:
+            if st.button(example.title, key=f"recorded_{example.key}", use_container_width=True,
+                         type="primary" if st.session_state.get("recorded_example") == example.key else "secondary"):
+                st.session_state.recorded_example = example.key
+                st.session_state.confirm_delete = False
+                st.session_state.pop("queued_question", None)
+                st.rerun()
 
     chats = store.list_all()
     personal_chats = [item for item in chats if item["kind"] == "personal"]
-    st.markdown('<p class="zubu-nav-label">Suas conversas</p>', unsafe_allow_html=True)
-    if not personal_chats:
-        st.caption("Comece uma conversa para vê-la aqui.")
-    for item in personal_chats:
-        if st.button(clean_display_text(item['title']), key=f"chat_{item['id']}",
-                     use_container_width=True,
-                     type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
-            switch_chat(item["id"])
-            st.rerun()
-
-    st.markdown('<p class="zubu-nav-heading">Conversas de teste</p>', unsafe_allow_html=True)
-    for item in (entry for entry in chats if entry["kind"] == "test"):
-        if st.button(clean_display_text(item['title']), key=f"test_chat_{item['id']}", use_container_width=True,
-                     type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
-            switch_chat(item["id"])
-            st.rerun()
-    with st.expander("Iniciar um teste"):
-        st.caption("Perguntas sugeridas; as respostas são geradas ao executar.")
-        for scenario in SCENARIOS:
-            if st.button(scenario.title, key=f"new_scenario_{scenario.key}", use_container_width=True):
-                switch_chat(store.create(kind="test", scenario_id=scenario.key,
-                                         title=scenario.title))
+    with st.container(key="navigation_personal"):
+        st.markdown('<p class="zubu-nav-heading">Suas conversas</p>', unsafe_allow_html=True)
+        if not personal_chats:
+            st.caption("Comece uma conversa para vê-la aqui.")
+        for item in personal_chats:
+            if st.button(clean_display_text(item['title']), key=f"chat_{item['id']}",
+                         use_container_width=True,
+                         type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
+                switch_chat(item["id"])
                 st.rerun()
+
+    with st.container(key="navigation_tests"):
+        st.markdown('<p class="zubu-nav-heading">Conversas de teste</p>', unsafe_allow_html=True)
+        for item in (entry for entry in chats if entry["kind"] == "test"):
+            if st.button(clean_display_text(item['title']), key=f"test_chat_{item['id']}", use_container_width=True,
+                         type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
+                switch_chat(item["id"])
+                st.rerun()
+        with st.expander("Iniciar um teste"):
+            st.caption("Perguntas sugeridas; as respostas são geradas ao executar.")
+            for scenario in SCENARIOS:
+                if st.button(scenario.title, key=f"new_scenario_{scenario.key}", use_container_width=True):
+                    switch_chat(store.create(kind="test", scenario_id=scenario.key,
+                                             title=scenario.title))
+                    st.rerun()
 
     st.divider()
     st.caption("Histórico salvo neste computador.")

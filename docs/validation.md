@@ -430,3 +430,11 @@ All **144 tests passed**, including existing conversation switching and delete/k
 Removed redundant help tooltips from recorded-example buttons. Remaining native tooltips explicitly use matching palette foreground/background colors. Navigation spacing now applies to the panel's own flex container as well as nested containers; row labels and their internal wrappers explicitly align left. Unselected items have a subtle surface rather than visually floating as widely separated centered text. Section/row typography has sufficient selector specificity to override native Markdown defaults.
 
 The conversation header now contains a smaller monogram, the title and one store-service subtitle, removing the repetitive three-line identity block. Its padding and typography were reduced while preserving the delete confirmation flow. All **144 tests passed**; the supplied screenshots are the visual reference, and pixel-level browser approval remains separate.
+
+## Natural-flow layout instead of compressed navigation
+
+The next screenshot showed clipped section labels and an overly compressed header. The height-limited navigation panel now uses normal block flow; its content cannot flex-shrink under the viewport limit. Examples, personal conversations and test scenarios have separate nonshrinking sections. Excess content scrolls rather than compressing labels into adjacent buttons. Heading space uses internal padding instead of paragraph margins, avoiding collapsed spacing around native Markdown wrappers.
+
+Navigation rows have a comfortable minimum height, more generous padding and readable line-height. Unselected rows are quiet, with surface feedback on hover; active rows remain distinct. The header uses natural block height and more padding, with a larger identity mark and subtitle. Message bubbles also have more internal space and separation. Bottom anchoring, column alignment, themes and all existing interaction identifiers remain intact.
+
+All **144 tests passed**. Browser runtime selection was attempted but reported no available browser; troubleshooting documentation was consulted, and no user setup was requested. This confirms functional regressions only; the updated visual design has not received automatic screenshot approval.
