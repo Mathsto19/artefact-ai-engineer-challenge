@@ -136,6 +136,14 @@ class StreamlitUITests(unittest.TestCase):
                     self.assertIn(chat_markdown(turn['question']), rendered)
                     self.assertIn(chat_markdown(split_answer_sources(turn['answer'])[0]), rendered)
                 self.assertNotIn('Fonte consultada:', rendered)
+                self.assertNotIn('resultado(s) do arquivo;', rendered)
+                self.assertNotIn('Condição consultada nos arquivos fornecidos', rendered)
+                for turn, message in zip(load_example(example.key)['turns'], list(app.chat_message)[1::2]):
+                    details = next(item for item in message.expander if item.label == 'Fontes e ferramentas consultadas')
+                    captions = [item.value for item in details.caption]
+                    self.assertIn(f"Tempo registrado: {turn['elapsed_seconds']:.2f} s", captions)
+                    for note in split_answer_sources(turn['answer'])[1]:
+                        self.assertIn(note, captions)
                 self.assertEqual(self.store.list_all(), before)
                 self.assertEqual(self.store.messages(personal_id), [])
             backend.assert_not_called()

@@ -187,10 +187,14 @@ def clean_display_text(content: str) -> str:
 
 
 def split_answer_sources(content: str) -> tuple[str, list[str]]:
-    """Separate application citation footers for display, retaining original records."""
+    """Move application provenance/diagnostics into details, retaining records."""
     body, sources = [], []
     for line in clean_display_text(content).splitlines():
-        if re.match(r'^\s*\*?Fonte consultada:', line):
+        if re.match(
+            r'^\s*\*?(?:Fonte consultada:|Mostrei \d+ de \d+ resultado\(s\) do arquivo;'
+            r'|Condição consultada nos arquivos fornecidos, sem data de validade informada\.)',
+            line,
+        ):
             sources.append(line.strip().strip('*'))
         else:
             body.append(line)

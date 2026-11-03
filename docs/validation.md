@@ -364,3 +364,9 @@ Streamlit interprets paired dollar signs as math delimiters, corrupting replies 
 Custom material avatars now explicitly use the selected palette's text color, overriding the native light-theme icon color that remained dark against dark-mode backgrounds. Avatar surfaces and borders use the same palette. The installed frontend confirms these icons receive an explicit native color, requiring the scoped override.
 
 All **140 tests passed**. AppTest checks that original/final BRL prices and discount emphasis reach the renderer with literal currency markup in both themes, that quote lines remain separate and that persisted amounts stay unchanged. Existing recorded-conversation and partial-response tests also pass. These are functional checks; final visual appearance remains subject to browser review. No new model run was needed for these presentation fixes.
+
+## Technical notes inside source details
+
+Catalog result-count/snapshot footers and pricing source-validity footers now appear only inside the source/tool expander, alongside policy references. Recorded response timing also moves into that expander. This presentation rule covers new output, saved chats and evaluation recordings while retaining the original evidence and history. Product availability, prices and budget comparisons remain visible customer information.
+
+All **140 tests passed**. The recorded-conversation AppTest verifies every technical footer and elapsed time is available inside its corresponding details panel, while the answer Markdown excludes the technical footer. This is a presentation-only change, with no new model run.

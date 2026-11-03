@@ -22,11 +22,13 @@ from .recorded_examples import EXAMPLES, EXAMPLE_BY_KEY, load_example, recorded_
 logger = logging.getLogger(__name__)
 
 
-def show_trace(trace, answer=""):
+def show_trace(trace, answer="", elapsed_seconds=None):
     _, sources = split_answer_sources(answer)
-    if not trace and not sources:
+    if not trace and not sources and elapsed_seconds is None:
         return
     with st.expander("Fontes e ferramentas consultadas"):
+        if elapsed_seconds is not None:
+            st.caption(f"Tempo registrado: {elapsed_seconds:.2f} s")
         for source in sources:
             st.caption(source)
         for item in trace or []:
@@ -61,8 +63,7 @@ def show_recorded_example(key: str) -> None:
             st.markdown(chat_markdown(turn["question"]))
         with st.chat_message("Zubumafu", avatar=":material/graphic_eq:"):
             st.markdown(chat_markdown(split_answer_sources(turn["answer"])[0]))
-            st.caption(f"Tempo registrado: {turn['elapsed_seconds']:.2f} s")
-            show_trace(turn.get("trace"), turn["answer"])
+            show_trace(turn.get("trace"), turn["answer"], turn['elapsed_seconds'])
 
 
 def main() -> None:
