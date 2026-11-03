@@ -410,3 +410,11 @@ The navigation now uses compact left-aligned rows, a distinct new-conversation a
 The column gap is now medium (2rem). Inspection of the installed frontend revealed that native columns subtract the full gap from each flex basis and then share the remaining gap equally. The matching composer width is therefore `calc(75% - 1rem)`, correcting the previous proportional-gap approximation. Main/footer padding overrides and messenger bubble alignment are retained.
 
 All **144 tests passed**, including theme changes via the popover, reopening navigation, recorded examples, actual-catalog submission and preservation of bottom anchoring. Visual browser approval is still separate from these functional checks.
+
+## Controls inside navigation and dark button surfaces
+
+Hide-navigation and Appearance controls now live below the brand inside the navigation panel. When it is hidden, only the reopen button remains outside. Theme selection is restored from the saved URL preference when navigation reopens; no theme selector remains floating above the chat. The panel's top offset and scroll height account for the removed external control row.
+
+The white example buttons came from help-tooltip wrappers between the button container and button, which bypassed the old direct-child CSS selector. Descendant selectors now style those buttons, and the Appearance button uses its actual `stPopoverButton` test identifier. Scoped secondary-button surfaces explicitly follow the palette, including hover, while active and new-conversation states keep their separate colors.
+
+All **144 tests passed**. AppTest verifies the theme control disappears with navigation, returns with the same preference after reopening, and remains functional on recorded examples without losing chat selection or bottom anchoring. Browser visual confirmation remains separate.

@@ -40,24 +40,32 @@ def theme_css(mode: str) -> str:
             background: var(--z-bg); padding: .25rem 0 .5rem; }
         .st-key-conversation_navigation { background: var(--z-surface); padding: 1.1rem;
             border: 1px solid var(--z-border); border-radius: 14px;
-            position: sticky; top: 4.75rem; max-height: calc(100dvh - 11rem);
+            position: sticky; top: 1rem; max-height: calc(100dvh - 8rem);
             overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--z-border) transparent;
         }
         .st-key-conversation_navigation [data-testid="stVerticalBlock"] { gap: .45rem; }
-        .st-key-conversation_navigation .stButton > button {
+        .st-key-conversation_navigation .stButton button {
             text-align: left; justify-content: flex-start; min-height: 2.35rem;
             padding: .45rem .65rem; background: transparent; border-color: transparent;
         }
-        .st-key-conversation_navigation .stButton > button [data-testid="stMarkdownContainer"] {
+        .st-key-conversation_navigation .stButton button [data-testid="stMarkdownContainer"] {
             text-align: left; font-size: .9rem;
         }
-        .st-key-conversation_navigation .stButton > button[kind="primary"] {
+        .st-key-conversation_navigation .stButton button[kind="primary"] {
             background: var(--z-selection); border-color: var(--z-border); color: var(--z-text);
         }
-        .st-key-conversation_navigation .stButton > button[kind="primary"] [data-testid="stMarkdownContainer"] {
+        .st-key-conversation_navigation .stButton button[kind="primary"] [data-testid="stMarkdownContainer"] {
             color: var(--z-text);
         }
-        .st-key-conversation_navigation .stButton > button:hover { background: var(--z-surface-alt); }
+        .st-key-conversation_navigation .stButton button:hover { background: var(--z-surface-alt); }
+        .st-key-conversation_navigation .stButton button[kind="secondary"] {
+            background: transparent !important; color: var(--z-text) !important;
+        }
+        .st-key-conversation_navigation .stButton button[kind="secondary"]:hover {
+            background: var(--z-surface-alt) !important;
+        }
+        .st-key-navigation_controls { padding: .25rem 0 .5rem; }
+        .st-key-navigation_controls .stButton button { border-color: var(--z-border); }
         .st-key-conversation_navigation .st-key-new_chat button[kind="primary"] {
             background: var(--z-accent); color: var(--z-on-accent); margin: .35rem 0 .65rem;
         }
@@ -68,8 +76,9 @@ def theme_css(mode: str) -> str:
         .zubu-brand-subtitle { font-size: .85rem; color: var(--z-muted); }
         .zubu-nav-heading { font-size: .95rem; font-weight: 650; margin: .65rem 0 .15rem; }
         .zubu-nav-label { color: var(--z-muted); font-size: .78rem; margin: .4rem 0 .1rem; }
-        [data-testid="stPopover"] > button {
-            background: var(--z-surface); color: var(--z-text); border: 1px solid var(--z-border);
+        [data-testid="stPopoverButton"] {
+            background: var(--z-surface) !important; color: var(--z-text) !important;
+            border: 1px solid var(--z-border);
             border-radius: 8px; min-height: 2.65rem;
         }
         [data-testid="stPopoverBody"] { background: var(--z-surface); color: var(--z-text); border-color: var(--z-border); }
@@ -79,15 +88,15 @@ def theme_css(mode: str) -> str:
         }
         [data-testid="stCaptionContainer"] { color: var(--z-muted); }
         [data-testid="stCaptionContainer"] [data-testid="stMarkdownContainer"] { color: var(--z-muted); }
-        .stButton > button, .stDownloadButton > button {
+        .stButton button, .stDownloadButton button {
             border-radius: 8px; min-height: 2.65rem; background: var(--z-surface);
             border-color: var(--z-border); color: var(--z-text);
         }
-        .stButton > button[kind="primary"] { background: var(--z-accent);
+        .stButton button[kind="primary"] { background: var(--z-accent);
             border-color: var(--z-accent); color: var(--z-on-accent); }
-        .stButton > button[kind="primary"] [data-testid="stMarkdownContainer"] { color: var(--z-on-accent); }
-        .stButton > button:hover, .stDownloadButton > button:hover { border-color: var(--z-accent); }
-        .stButton > button:focus-visible, .stDownloadButton > button:focus-visible {
+        .stButton button[kind="primary"] [data-testid="stMarkdownContainer"] { color: var(--z-on-accent); }
+        .stButton button:hover, .stDownloadButton button:hover { border-color: var(--z-accent); }
+        .stButton button:focus-visible, .stDownloadButton button:focus-visible {
             outline: 2px solid var(--z-accent); outline-offset: 2px;
         }
         .zubu-banner { border-bottom: 1px solid var(--z-border); padding-bottom: 1.25rem; margin-bottom: 1.5rem; }

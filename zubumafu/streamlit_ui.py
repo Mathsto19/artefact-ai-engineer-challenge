@@ -79,13 +79,6 @@ def main() -> None:
     def save_theme() -> None:
         st.query_params["theme"] = THEMES[st.session_state.ui_theme]
 
-    with st.container(key="app_controls", horizontal=True, vertical_alignment="center"):
-        if st.button("Ocultar conversas" if st.session_state.navigation_open else "Abrir conversas",
-                     key="toggle_navigation", icon=":material/menu:"):
-            st.session_state.navigation_open = not st.session_state.navigation_open
-            st.rerun()
-        with st.popover("Aparência", icon=":material/contrast:"):
-            st.selectbox("Tema", list(THEMES), key="ui_theme", on_change=save_theme)
     st.markdown(theme_css(st.session_state.ui_theme), unsafe_allow_html=True)
 
     @st.cache_resource
@@ -114,8 +107,12 @@ def main() -> None:
         navigation, content = st.columns([1, 3], gap="medium")
         with navigation:
             with st.container(key="conversation_navigation"):
-                render_navigation(store, switch_chat)
+                render_navigation(store, switch_chat, save_theme)
     else:
+        with st.container(key="app_controls"):
+            if st.button("Abrir conversas", key="toggle_navigation", icon=":material/menu:"):
+                st.session_state.navigation_open = True
+                st.rerun()
         content = st.container()
     # At the main root Streamlit anchors the composer to the viewport bottom.
     # Inside the conversation column it becomes inline and precedes new replies.
@@ -127,9 +124,15 @@ def main() -> None:
             render_conversation(store, switch_chat, question)
 
 
-def render_navigation(store, switch_chat) -> None:
+def render_navigation(store, switch_chat, save_theme) -> None:
     st.markdown('''<div class="zubu-brand"><span class="zubu-sidebar-title">Zubumafu</span>
                 <span class="zubu-brand-subtitle">Empório da Música</span></div>''', unsafe_allow_html=True)
+    with st.container(key="navigation_controls"):
+        if st.button("Ocultar conversas", key="toggle_navigation", icon=":material/menu:", use_container_width=True):
+            st.session_state.navigation_open = False
+            st.rerun()
+        with st.popover("Aparência", icon=":material/contrast:", use_container_width=True):
+            st.selectbox("Tema", list(THEMES), key="ui_theme", on_change=save_theme)
     if st.button("Nova conversa", key="new_chat", type="primary", icon=":material/add:", use_container_width=True):
         switch_chat(store.create())
         st.rerun()
