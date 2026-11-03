@@ -444,3 +444,9 @@ All **144 tests passed**. Browser runtime selection was attempted but reported n
 Following the next header screenshot, removed the decorative monogram and card frame. The heading is now a flat title/subtitle area with a single bottom separator. Greeting/new-chat titles display `Zubumafu` above `Empório da Música`; meaningful stored titles remain visible. Delete moves into an Options popover, retaining the existing confirmation flow. Stored conversation titles/history are unchanged.
 
 All **144 tests passed**, including delete/keep behavior. Browser appearance remains unverified automatically.
+
+## Navigation sections and visual hierarchy
+
+Reorganized navigation around explicit bordered sections: recorded examples, personal conversations, validation and preferences. The new-conversation action sits directly under the brand; Appearance and hide-navigation controls move to the preferences footer. Examples and histories use distinct labels and monochrome row icons, with a lateral accent marking the active conversation. Section padding and row spacing follow one consistent rhythm, replacing the disconnected blank spaces in the reported screenshot.
+
+All **144 tests passed**, including theme restoration, reopening navigation, selecting recorded/personal conversations and scenario execution. Automatic visual approval remains unavailable.

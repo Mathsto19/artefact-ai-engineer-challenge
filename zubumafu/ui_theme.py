@@ -47,7 +47,7 @@ def theme_css(mode: str) -> str:
         /* Normal document flow prevents a height-limited flex column from
            shrinking Markdown labels underneath the following controls. */
         .st-key-conversation_navigation > * {
-            flex-shrink: 0 !important; margin-bottom: .8rem;
+            flex-shrink: 0 !important; margin-bottom: .75rem;
         }
         .st-key-conversation_navigation > :last-child { margin-bottom: 0; }
         .st-key-conversation_navigation [data-testid="stVerticalBlock"] {
@@ -67,6 +67,7 @@ def theme_css(mode: str) -> str:
         }
         .st-key-conversation_navigation .stButton button[kind="primary"] {
             background: var(--z-selection); border-color: var(--z-border); color: var(--z-text);
+            box-shadow: inset 3px 0 0 var(--z-accent);
         }
         .st-key-conversation_navigation .stButton button[kind="primary"] [data-testid="stMarkdownContainer"] {
             color: var(--z-text);
@@ -81,7 +82,8 @@ def theme_css(mode: str) -> str:
         .st-key-navigation_controls { padding: .25rem 0; }
         .st-key-navigation_controls .stButton button { border-color: var(--z-border); }
         .st-key-conversation_navigation .st-key-new_chat button[kind="primary"] {
-            background: var(--z-accent); color: var(--z-on-accent); margin: 0;
+            background: var(--z-accent); color: var(--z-on-accent); margin: .2rem 0 .5rem;
+            box-shadow: none;
         }
         .st-key-conversation_navigation .st-key-new_chat button[kind="primary"] [data-testid="stMarkdownContainer"] {
             color: var(--z-on-accent);
@@ -89,18 +91,25 @@ def theme_css(mode: str) -> str:
         .zubu-brand { display: flex; flex-direction: column; gap: .3rem; padding: .2rem 0 .4rem; }
         .zubu-brand-subtitle { font-size: .85rem; color: var(--z-muted); }
         .st-key-conversation_navigation .zubu-nav-heading {
-            font-size: 1rem; line-height: 1.5; font-weight: 650;
-            margin: 0; padding: .75rem 0 .25rem;
+            font-size: .9rem; line-height: 1.5; font-weight: 650;
+            margin: 0; padding: 0 0 .55rem;
         }
         .st-key-conversation_navigation .zubu-nav-label {
             color: var(--z-muted); font-size: .86rem; line-height: 1.5;
-            margin: 0; padding: .3rem 0 .25rem;
+            margin: 0; padding: 0 0 .6rem;
         }
-        .st-key-navigation_examples, .st-key-navigation_personal, .st-key-navigation_tests {
-            display: block !important; padding: .35rem 0 .5rem;
+        .st-key-navigation_examples, .st-key-navigation_personal,
+        .st-key-navigation_tests, .st-key-navigation_footer {
+            display: block !important; padding: 1.1rem 0; margin: 0 !important;
+            border-top: 1px solid var(--z-border);
         }
-        .st-key-navigation_examples > *, .st-key-navigation_personal > *, .st-key-navigation_tests > * {
-            margin-bottom: .45rem; flex-shrink: 0 !important;
+        .st-key-navigation_examples > *, .st-key-navigation_personal > *,
+        .st-key-navigation_tests > *, .st-key-navigation_footer > * {
+            margin-bottom: .3rem; flex-shrink: 0 !important;
+        }
+        .st-key-navigation_footer { padding-bottom: 0; }
+        .st-key-navigation_footer > [data-testid="stElementContainer"]:has([data-testid="stCaptionContainer"]) {
+            padding-top: .6rem;
         }
         [data-testid="stPopoverButton"] {
             background: var(--z-surface) !important; color: var(--z-text) !important;

@@ -129,21 +129,15 @@ def main() -> None:
 def render_navigation(store, switch_chat, save_theme) -> None:
     st.markdown('''<div class="zubu-brand"><span class="zubu-sidebar-title">Zubumafu</span>
                 <span class="zubu-brand-subtitle">Empório da Música</span></div>''', unsafe_allow_html=True)
-    with st.container(key="navigation_controls"):
-        if st.button("Ocultar conversas", key="toggle_navigation", icon=":material/menu:", use_container_width=True):
-            st.session_state.navigation_open = False
-            st.rerun()
-        with st.popover("Aparência", icon=":material/contrast:", use_container_width=True):
-            st.selectbox("Tema", list(THEMES), key="ui_theme", on_change=save_theme)
     if st.button("Nova conversa", key="new_chat", type="primary", icon=":material/add:", use_container_width=True):
         switch_chat(store.create())
         st.rerun()
 
     with st.container(key="navigation_examples"):
-        st.markdown('<p class="zubu-nav-heading">Minhas conversas</p>', unsafe_allow_html=True)
-        st.markdown('<p class="zubu-nav-label">Exemplos para avaliação</p>', unsafe_allow_html=True)
+        st.markdown('<p class="zubu-nav-heading">Exemplos registrados</p>', unsafe_allow_html=True)
+        st.markdown('<p class="zubu-nav-label">Conversas para avaliação</p>', unsafe_allow_html=True)
         for example in EXAMPLES:
-            if st.button(example.title, key=f"recorded_{example.key}", use_container_width=True,
+            if st.button(example.title, key=f"recorded_{example.key}", use_container_width=True, icon=":material/article:",
                          type="primary" if st.session_state.get("recorded_example") == example.key else "secondary"):
                 st.session_state.recorded_example = example.key
                 st.session_state.confirm_delete = False
@@ -153,12 +147,12 @@ def render_navigation(store, switch_chat, save_theme) -> None:
     chats = store.list_all()
     personal_chats = [item for item in chats if item["kind"] == "personal"]
     with st.container(key="navigation_personal"):
-        st.markdown('<p class="zubu-nav-heading">Suas conversas</p>', unsafe_allow_html=True)
+        st.markdown('<p class="zubu-nav-heading">Minhas conversas</p>', unsafe_allow_html=True)
         if not personal_chats:
             st.caption("Comece uma conversa para vê-la aqui.")
         for item in personal_chats:
             if st.button(clean_display_text(item['title']), key=f"chat_{item['id']}",
-                         use_container_width=True,
+                         use_container_width=True, icon=":material/chat_bubble_outline:",
                          type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
                 switch_chat(item["id"])
                 st.rerun()
@@ -166,7 +160,7 @@ def render_navigation(store, switch_chat, save_theme) -> None:
     with st.container(key="navigation_tests"):
         st.markdown('<p class="zubu-nav-heading">Conversas de teste</p>', unsafe_allow_html=True)
         for item in (entry for entry in chats if entry["kind"] == "test"):
-            if st.button(clean_display_text(item['title']), key=f"test_chat_{item['id']}", use_container_width=True,
+            if st.button(clean_display_text(item['title']), key=f"test_chat_{item['id']}", use_container_width=True, icon=":material/science:",
                          type="primary" if item["id"] == st.session_state.chat_id and not st.session_state.get("recorded_example") else "secondary"):
                 switch_chat(item["id"])
                 st.rerun()
@@ -178,11 +172,17 @@ def render_navigation(store, switch_chat, save_theme) -> None:
                                              title=scenario.title))
                     st.rerun()
 
-    st.divider()
-    st.caption("Histórico salvo neste computador.")
-    with st.expander("Sobre este protótipo"):
-        st.caption("Dados demonstrativos. Sem conexão com WhatsApp ou autenticação de produção.")
-        st.caption("As mensagens, inclusive e-mails digitados, são salvas localmente sem criptografia. Exclua conversas sensíveis quando terminar.")
+    with st.container(key="navigation_footer"):
+        st.markdown('<p class="zubu-nav-heading">Preferências</p>', unsafe_allow_html=True)
+        with st.popover("Aparência", icon=":material/contrast:", use_container_width=True):
+            st.selectbox("Tema", list(THEMES), key="ui_theme", on_change=save_theme)
+        if st.button("Ocultar conversas", key="toggle_navigation", icon=":material/menu:", use_container_width=True):
+            st.session_state.navigation_open = False
+            st.rerun()
+        st.caption("Histórico salvo neste computador.")
+        with st.expander("Sobre este protótipo"):
+            st.caption("Dados demonstrativos. Sem conexão com WhatsApp ou autenticação de produção.")
+            st.caption("As mensagens, inclusive e-mails digitados, são salvas localmente sem criptografia. Exclua conversas sensíveis quando terminar.")
 
 
 def render_conversation(store, switch_chat, question=None) -> None:
