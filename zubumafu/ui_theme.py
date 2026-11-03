@@ -112,8 +112,8 @@ def theme_css(mode: str) -> str:
             border: 1px solid var(--z-border); border-radius: 10px;
             padding: .65rem .75rem; min-height: 3rem;
         }
-        .st-key-navigation_examples .zubu-nav-label {
-            padding-bottom: 1rem;
+        .st-key-navigation_examples > [data-testid="stElementContainer"]:has(.zubu-nav-label) {
+            margin-bottom: 1rem;
         }
         .st-key-navigation_examples .stButton button[kind="secondary"] {
             background: var(--z-surface) !important;
