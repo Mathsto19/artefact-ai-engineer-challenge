@@ -186,6 +186,17 @@ def clean_display_text(content: str) -> str:
     return strip_emojis(content.replace('\u2014', '-'))
 
 
+def split_answer_sources(content: str) -> tuple[str, list[str]]:
+    """Separate application citation footers for display, retaining original records."""
+    body, sources = [], []
+    for line in clean_display_text(content).splitlines():
+        if re.match(r'^\s*\*?Fonte consultada:', line):
+            sources.append(line.strip().strip('*'))
+        else:
+            body.append(line)
+    return '\n'.join(body).strip(), sources
+
+
 def clean_display_value(value):
     """Format display metadata without changing stored/source tool payloads."""
     if isinstance(value, str):

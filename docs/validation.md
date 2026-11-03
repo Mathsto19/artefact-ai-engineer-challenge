@@ -342,3 +342,9 @@ New input tests confirm immediate handling of `ui`, `oiii`, `td bm` and other bo
 Removed the long dash U+2014 from newly rendered catalog text and editorial Markdown. The persona prohibits it; shared display formatting also normalizes it in final replies, incremental events, saved-history display, provenance metadata and Markdown downloads. Original machine evidence and supplied CSV/PDF sources remain unchanged, while exports disclose presentation normalization. The catalog follow-up parser still recognizes historical separators, so older personal conversations retain working source lookups.
 
 The full **138 tests passed**, including long-dash removal during response cleanup, normalized exports with unchanged source evidence, and steel-string follow-ups from both new and historical catalog formatting. This is a presentation change; no new inference result or source/price claim is asserted.
+
+## Policy citation placement
+
+Policy citation footers now appear inside the collapsed source/tool details instead of the visible answer body. The same display rule applies to incremental output, saved conversations and recorded evaluation examples. Original stored answers, evidence files and structured tool references remain intact. Citation-only legacy records still expose their source details even without a tool trace.
+
+All **138 tests passed**. AppTest verifies that the customer-facing answer excludes the footer, the expander contains its exact section/page citation, structured references remain accessible and the original persisted answer is preserved. This change does not claim new live-model validation.

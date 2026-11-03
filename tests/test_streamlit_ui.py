@@ -11,7 +11,7 @@ from streamlit.testing.v1 import AppTest
 
 from zubumafu.conversations import ConversationStore
 from zubumafu.recorded_examples import EXAMPLES, load_example
-from zubumafu.response_quality import clean_display_text
+from zubumafu.response_quality import clean_display_text, split_answer_sources
 
 
 APP = str(Path(__file__).resolve().parents[1] / "app.py")
@@ -33,7 +33,9 @@ class StreamlitUITests(unittest.TestCase):
         trace = [{'tool': 'search_store_policies', 'status': 'ok', 'pages': [4],
                   'references': [{'chapter': 4, 'pages': [4]}], 'source': 'data/manual.pdf',
                   'reply_origin': 'source_verified_clarification_template'}]
-        with patch('zubumafu.streamlit_ui.respond', return_value=('A compra foi online?', trace)) as backend:
+        citation = 'Fonte consultada: Manual de políticas v2.1, seção(ões) 4, página(s) 4.'
+        original_answer = f'A compra foi online?\n\n*{citation}*'
+        with patch('zubumafu.streamlit_ui.respond', return_value=(original_answer, trace)) as backend:
             app = AppTest.from_file(APP).run(timeout=15)
             self.assertFalse(app.exception)
             first = app.session_state['chat_id']
@@ -41,6 +43,10 @@ class StreamlitUITests(unittest.TestCase):
             self.assertFalse(app.exception)
             self.assertEqual(len(app.chat_message), 2)
             self.assertEqual(json.loads(app.json[0].value)['references'], trace[0]['references'])
+            self.assertEqual([item.value for item in app.chat_message[1].markdown], ['A compra foi online?'])
+            sources = next(item for item in app.expander if item.label == 'Fontes e ferramentas consultadas')
+            self.assertIn(citation, [item.value for item in sources.caption])
+            self.assertEqual(self.store.messages(first)[-1]['content'], original_answer)
             app.button(key='new_chat').click().run(timeout=15)
             second = app.session_state['chat_id']
             self.assertNotEqual(first, second)
@@ -106,7 +112,8 @@ class StreamlitUITests(unittest.TestCase):
                 rendered = '\n'.join(item.value for item in app.markdown)
                 for turn in load_example(example.key)['turns']:
                     self.assertIn(clean_display_text(turn['question']), rendered)
-                    self.assertIn(clean_display_text(turn['answer']), rendered)
+                    self.assertIn(split_answer_sources(turn['answer'])[0], rendered)
+                self.assertNotIn('Fonte consultada:', rendered)
                 self.assertEqual(self.store.list_all(), before)
                 self.assertEqual(self.store.messages(personal_id), [])
             backend.assert_not_called()
