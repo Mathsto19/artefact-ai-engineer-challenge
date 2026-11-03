@@ -452,3 +452,5 @@ Reorganized navigation around explicit bordered sections: recorded examples, per
 All **144 tests passed**, including theme restoration, reopening navigation, selecting recorded/personal conversations and scenario execution. Automatic visual approval remains unavailable.
 
 The preferences footer's hide-navigation action now has an explicit outlined button surface, rounded corners and hover feedback matching Appearance. This is a scoped CSS adjustment; interaction behavior is unchanged, and the regression suite was not rerun solely for it.
+
+Recorded-example rows now use outlined rounded surfaces, a trailing chevron and consistent row spacing to make their navigation action clearer. Active-state and theme colors are retained. This is another scoped CSS presentation adjustment; no new inference or regression result is claimed.
