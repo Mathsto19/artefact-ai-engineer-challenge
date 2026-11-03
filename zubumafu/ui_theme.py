@@ -72,6 +72,17 @@ def theme_css(mode: str) -> str:
         [data-testid="stChatInput"], [data-baseweb="base-input"] {
             background: var(--z-surface); border-color: var(--z-border); border-radius: 10px;
         }
+        /* The native chat input paints its inner wrapper separately. */
+        [data-testid="stChatInput"] > div {
+            background: var(--z-surface) !important;
+            color: var(--z-text); border-color: var(--z-border) !important;
+        }
+        [data-testid="stChatInput"] > div:focus-within {
+            border-color: var(--z-accent) !important;
+        }
+        [data-testid="stChatInput"] textarea {
+            background: transparent !important;
+        }
         [data-testid="stChatInput"] textarea, .stApp input, .stApp textarea {
             background: var(--z-surface); color: var(--z-text); caret-color: var(--z-accent);
         }
@@ -85,6 +96,27 @@ def theme_css(mode: str) -> str:
         [role="option"]:hover, [role="option"][aria-selected="true"] { background: var(--z-surface-alt); }
         [data-baseweb="select"] [role="combobox"], [data-baseweb="select"] span { color: var(--z-text); }
         [data-baseweb="select"] svg { fill: var(--z-text); }
+        /* Streamlit 1.66 selectboxes use React Aria rather than Base Web. */
+        [data-testid="stSelectbox"] > div,
+        [data-testid="stSelectbox"] [role="group"] {
+            background: var(--z-surface) !important;
+            color: var(--z-text); border-color: var(--z-border) !important;
+        }
+        [data-testid="stSelectbox"] [role="group"]:focus-within {
+            border-color: var(--z-accent) !important;
+        }
+        [data-testid="stSelectbox"] input,
+        [data-testid="stSelectbox"] button {
+            background: transparent !important; color: var(--z-text) !important;
+        }
+        [data-testid="stSelectbox"] button:hover {
+            background: var(--z-surface-alt) !important;
+        }
+        [data-testid="stSelectbox"] svg { color: var(--z-text); }
+        [data-testid="stSelectboxVirtualDropdown"] {
+            background: var(--z-surface) !important;
+            color: var(--z-text); border-color: var(--z-border) !important;
+        }
         .stApp a { color: var(--z-accent); }
         [data-testid="stExpander"], [data-testid="stAlert"], [data-testid="stStatusWidget"] {
             background: var(--z-surface); color: var(--z-text); border-color: var(--z-border);

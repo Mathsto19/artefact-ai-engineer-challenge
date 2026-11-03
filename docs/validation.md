@@ -370,3 +370,9 @@ All **140 tests passed**. AppTest checks that original/final BRL prices and disc
 Catalog result-count/snapshot footers and pricing source-validity footers now appear only inside the source/tool expander, alongside policy references. Recorded response timing also moves into that expander. This presentation rule covers new output, saved chats and evaluation recordings while retaining the original evidence and history. Product availability, prices and budget comparisons remain visible customer information.
 
 All **140 tests passed**. The recorded-conversation AppTest verifies every technical footer and elapsed time is available inside its corresponding details panel, while the answer Markdown excludes the technical footer. This is a presentation-only change, with no new model run.
+
+## Native input surfaces in dark mode
+
+The chat composer has an independently painted inner wrapper, and the installed Streamlit 1.66 selectbox uses React Aria components rather than the older Base Web selectors. Their native light surfaces caused the reported white input frame and dropdown arrow area. Scoped palette rules now cover the chat wrapper, selectbox group/input/buttons, dropdown surface, hover and focus borders. The textarea uses a transparent background within its themed wrapper.
+
+All **140 tests passed**, including existing theme switching/navigation checks. The installed frontend structure was inspected to identify the native wrappers. Browser screenshots are still needed to confirm the final visual result; these checks do not assert visual approval.
