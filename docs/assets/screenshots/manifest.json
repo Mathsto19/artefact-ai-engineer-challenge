@@ -1,0 +1,42 @@
+{
+  "captured_at": "2026-11-03T00:02:41.730170-03:00",
+  "method": "Unedited PNGs from actual Streamlit rendering in headless local Edge via Playwright.",
+  "privacy": "Disposable SQLite history; recorded order email is already redacted in shipped evidence.",
+  "screenshots": [
+    {
+      "file": "overview-dark.png",
+      "provenance": "Fresh UI exchange: greeting and direct CSV recommendation. No LLM inference.",
+      "sha256": "a9121c1569cec1e937f02864cc9e6215f2e9c478202e8e5bf7634e2118550df3"
+    },
+    {
+      "file": "overview-light.png",
+      "provenance": "Same disposable local conversation, light theme. No LLM inference.",
+      "sha256": "692e5c0163f1a19594805b3090ac262557b3105289325999ecbe541d553c8f3f"
+    },
+    {
+      "file": "catalog.png",
+      "provenance": "Read-only replay of accepted real-run evidence: docs/evidence/quality_ui_acceptance.json. No new inference.",
+      "sha256": "2992e3d44028872584509eb51fd793133aa740167138f2044eb10323794dad4f"
+    },
+    {
+      "file": "pricing.png",
+      "provenance": "Read-only replay of accepted real-run evidence: docs/evidence/pricing_after_quality.json. No new inference.",
+      "sha256": "0a231f1c38d91102c96a5e45fc711d6245a904ea48f42c0e4539f6f4855d2d3a"
+    },
+    {
+      "file": "returns.png",
+      "provenance": "Read-only replay of accepted real-run evidence: docs/evidence/policies_after_quality.json. No new inference.",
+      "sha256": "3f1d0583d3b51c59b4fdac512a682a8baa7dd22d979a67f3b05c6ce99b47453e"
+    },
+    {
+      "file": "policy-sources.png",
+      "provenance": "Source panel of the first recorded return-policy reply; original PDF section/page metadata.",
+      "sha256": "3e2606fdba14f9b47f7f4dec43645e7075e6d4cb18f91142bd5708272a5576b8"
+    },
+    {
+      "file": "orders.png",
+      "provenance": "Read-only replay of accepted real-run evidence: docs/evidence/orders_after_quality.json. No new inference.",
+      "sha256": "df9315d92f521db5a3bf8a8719e5dfac5dd47ec552af26c5b3e3e61585e0063c"
+    }
+  ]
+}

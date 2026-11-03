@@ -454,3 +454,15 @@ All **144 tests passed**, including theme restoration, reopening navigation, sel
 The preferences footer's hide-navigation action now has an explicit outlined button surface, rounded corners and hover feedback matching Appearance. This is a scoped CSS adjustment; interaction behavior is unchanged, and the regression suite was not rerun solely for it.
 
 Recorded-example rows now use outlined rounded surfaces, a trailing chevron and consistent row spacing to make their navigation action clearer. Active-state and theme colors are retained. This is another scoped CSS presentation adjustment; no new inference or regression result is claimed.
+
+## Visual README and reproducible desktop captures
+
+Rebuilt the English README around a product overview, seven current UI screenshots, five feature demonstrations, a Mermaid architecture diagram, setup and explicit limitations. Detailed reference material moved into `docs/runbook.md`; controls and architecture notes were updated to the current navigation/footer arrangement. AI assistance disclosure and real-model/direct-controller distinctions remain explicit.
+
+The connected browser runtime reported no available browser. For this documentation task, captures were then produced using a separate optional Playwright 1.64.1 environment and a new headless local Edge context, against a dedicated Streamlit server on port 8502. Its history used a disposable database under ignored `tmp/`; the regular application and private history were not accessed. No application dependency or runtime code was changed.
+
+Two screenshots show a fresh greeting/direct CSV recommendation in light/dark mode. Four conversation-pane screenshots replay accepted catalog, pricing, return-policy and order reports in the current UI. One reply screenshot shows its expanded PDF section/page provenance. These are unedited browser captures, not generated mockups or additional real-model runs. Order email stays redacted. Source reports and historical transcripts are unchanged.
+
+All seven images were visually inspected. A local Markdown/HTML preview confirmed that all eight image placements load and that the tables/code blocks render. The seven PNG hashes match their manifest; 39 local documentation links resolved. Screenshot PNGs total approximately 622 KiB. This selected desktop review supersedes earlier statements that no current UI captures existed; it does not establish mobile usability or exhaustive visual regression coverage.
+
+The full **144-test regression suite passed** again. See [capture provenance and reproduction instructions](screenshots.md). No application submission or repository freeze was performed.

@@ -1,6 +1,6 @@
 # Zubumafu - Architecture Decision Record
 
-Status: catalog, policies, promotion/PIX pricing, demonstrative orders and the persistent conversation interface integrated. Final packaging and visual review are pending. See [validation](validation.md) for observed results.
+Status: catalog, policies, promotion/PIX pricing, demonstrative orders and the persistent conversation interface integrated. Selected current desktop states have been captured and visually reviewed; broader dialogue, responsive/mobile and final submission checks remain separate. See [validation](validation.md) and [screenshot provenance](screenshots.md).
 
 ## Scope and sources
 
@@ -88,9 +88,9 @@ The original `qwen3:4b` and its stored template remain unchanged. A request-pref
 
 ## Theme choice and app-owned navigation
 
-The user reported that the earlier native-toolbar adjustment still did not make the sidebar reopen control available. The conversation navigation now uses a regular application column, with a real **Abrir conversas / Ocultar conversas** button in an always-rendered top control area. It does not depend on Streamlit's native collapsed-sidebar state. Hiding/reopening navigation retains the selected thread/recording and messages; the native header is unused. The inline conversation input stays within the conversation column.
+The user reported that the earlier native-toolbar adjustment still did not make the sidebar reopen control available. Navigation uses an app-owned column: **Ocultar conversas** lives in its preferences footer, while **Abrir conversas** remains available when it is hidden. This does not depend on the native collapsed sidebar. Hiding/reopening navigation retains the selected thread/recording and messages. The native header is unused. The composer lives at the main root for native bottom anchoring; CSS aligns its width with the conversation column using the installed frontend's flex-gap calculation.
 
-The same top area provides light, dark and system mode. Palettes use explicit matching foreground/background variables across forms, messages, navigation and source details. System mode uses the browser's `prefers-color-scheme`; explicit selections are saved in the theme URL parameter for refresh/bookmark continuity. Mode changes do not write to chat history or run inference. Original message/evidence storage is unaffected.
+**Aparência** in the preferences footer provides light, dark and system mode. Palettes use explicit matching foreground/background variables across forms, messages, navigation and source details. System mode uses the browser's `prefers-color-scheme`; explicit selections are saved in the theme URL parameter for refresh/bookmark continuity. Reopening navigation restores access to the selector. Mode changes do not write to chat history or run inference. Original message/evidence storage is unaffected.
 
 Small spelling/abbreviation aliases are applied only to greeting/intent recognition. They do not rewrite original customer input, perform fuzzy identity matching or alter order/email verification. The LLM still receives the original question; deterministic tool validation and source requirements remain in place. Unknown product identities should be clarified rather than silently corrected.
 
