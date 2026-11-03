@@ -120,6 +120,26 @@ class StreamlitUITests(unittest.TestCase):
             self.assertEqual(messages[-1]['content'], answer)
             self.assertEqual(messages[-2]['content'], question)
 
+    def test_repeating_failed_recommendation_uses_real_catalog_without_model(self):
+        question = 'me recomneda uma guitarra com um bom preço'
+        previous_reply = 'Não encontrei esse modelo no catálogo fornecido. Pode conferir o nome?'
+        with patch('zubumafu.model.create_chat', side_effect=AssertionError('No inference needed')):
+            app = AppTest.from_file(APP).run(timeout=15)
+            chat_id = app.session_state['chat_id']
+            self.store.add_exchange(chat_id, question, previous_reply)
+            app.button(key=f'chat_{chat_id}').click().run(timeout=15)
+            app.chat_input[0].set_value(question).run(timeout=15)
+            self.assertFalse(app.exception)
+            self.assertEqual(len(app.chat_message), 4)
+            body = app.chat_message[-1].markdown[0].value
+            self.assertIn('Fender Telecaster Player Series', body)
+            self.assertIn('R\\$ 5.400,00', body)
+            self.assertNotIn('Não encontrei', body)
+            trace = self.store.messages(chat_id)[-1]['trace'][0]
+            self.assertEqual(trace['invoked_by'], 'application_catalog_lookup')
+            self.assertEqual(trace['matches'], 5)
+            self.assertEqual(self.store.messages(chat_id)[1]['content'], previous_reply)
+
     def test_recorded_conversations_open_without_inference_or_private_history_changes(self):
         with patch('zubumafu.streamlit_ui.respond') as backend:
             app = AppTest.from_file(APP).run(timeout=15)

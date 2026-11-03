@@ -59,6 +59,22 @@ def _respond(
                 "Oi! Sou o Zubumafu, assistente do Empório da Música. Como posso ajudar?"), []
     if outside_scope(user_message):
         return "Meu foco é ajudar com instrumentos musicais e o atendimento do Empório da Música. Posso ajudar com algo da loja?", []
+    category = _simple_category_recommendation(user_message)
+    if category is not None:
+        emit({'type': 'stage', 'label': 'Consultando o catálogo'})
+        try:
+            result = json.loads(search_products(category=category))
+            if 'error' in result:
+                raise ValueError('catalog lookup failed')
+        except (TypeError, ValueError, OSError):
+            return "Não consegui consultar o catálogo agora. Tente novamente, por favor.", [
+                {'tool': 'search_products', 'status': 'error', 'invoked_by': 'application_catalog_lookup'}]
+        return render_catalog(result), [{
+            'tool': 'search_products', 'status': 'ok', 'source': result['source'],
+            'source_type': result['source_type'], 'filters': result['filters'],
+            'matches': result['total_matches'], 'invoked_by': 'application_catalog_lookup',
+            'reply_origin': 'python_catalog_result_template',
+        }]
     string_reference = referenced_strings(user_message, history or [])
     if string_reference is not None:
         emit({'type': 'stage', 'label': 'Consultando as opções anteriores'})
@@ -359,6 +375,22 @@ def _requires_policy_lookup(message: str) -> bool:
         "whatsapp", "telefone", "contato", "privacidade", "dados pessoais",
         "promoc", "desconto", "aberto", "abre", "fecha", "feriado",
     ))
+
+
+def _simple_category_recommendation(message: str) -> str | None:
+    """Resolve complete, unqualified category requests without model selection.
+
+    Full matching preserves names, numeric budgets and specifications for the
+    normal tool flow instead of silently dropping customer constraints.
+    """
+    normalized = ' '.join(normalize_intent(message).split()).strip(' .!?')
+    match = re.fullmatch(
+        r'(?:me )?(?:recomenda|recomende|recomendar|recomneda|indica|indique|sugere|quero|procuro|busco) '
+        r'(?:(?:um|uma) )?(guitarra|violao|ukulele|teclado|baixo|bateria|piano|violino)'
+        r' (?:com (?:um )?(?:bom preco|preco bom|bom custo[ -]beneficio)|em conta|barat[oa])',
+        normalized,
+    )
+    return match[1] if match else None
 
 
 def _required_tool(message: str, history: list[dict[str, str]]) -> str | None:

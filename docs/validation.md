@@ -382,3 +382,9 @@ All **140 tests passed**, including existing theme switching/navigation checks. 
 The message input now lives at the Streamlit main root, enabling its native bottom-anchored mode. Previously it was inside the conversation column, where Streamlit renders it inline; newly submitted messages and generation status therefore appeared below the input. Chat rendering remains in the conversation area, while the composer stays in the native bottom region. Read-only recordings still omit the composer.
 
 All **140 tests passed**. AppTest now verifies the input's native `is_auto_positioned_at_bottom` flag before/after a streamed exchange and when switching themes, alongside existing navigation, history and scenario checks. No live inference was needed for this layout fix.
+
+## Direct catalog lookup for simple affordable recommendations
+
+The earlier routing/prompt change still depended on model tool selection. Complete category-only requests with an affordability phrase now call the real catalog directly in Python, including the reported `recomneda` spelling and the bounded `guitara` alias. The trace explicitly records `application_catalog_lookup`; it does not claim a model tool call. This path sorts available products by final price without inventing a budget. Full matching excludes requests with brands, specifications, numeric budgets, shipping or PIX constraints so those remain in the existing tool flow.
+
+All **144 tests passed**. New tests verify real guitar results, no model invocation, preservation of constraints, catalog-error handling, and a Streamlit exchange repeated after an earlier model-not-found reply. Original failed history is retained; a new submission produces the corrected result. [Direct catalog evidence](evidence/recommendation_direct_catalog.json) records both spellings, actual CSV results and execution times without inference. This does not resolve latency for other model-dependent requests.

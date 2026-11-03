@@ -1,8 +1,9 @@
 import json
 import unittest
 from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
-from zubumafu.agent import respond
+from zubumafu.agent import respond, _simple_category_recommendation
 
 
 class PricingAgentTests(unittest.TestCase):
@@ -14,7 +15,7 @@ class PricingAgentTests(unittest.TestCase):
     def test_price_recommendations_offer_catalog_instead_of_exact_model_lookup(self):
         for question in ('me recomenda uma guitarra com um bom preço',
                          'Me indica um violão com bom custo-benefício',
-                         'Quero uma guitarra com bom preço'):
+                         'Quero uma guitarra Fender com bom preço'):
             with self.subTest(question=question):
                 calls = []
 
@@ -34,6 +35,37 @@ class PricingAgentTests(unittest.TestCase):
                 self.assertEqual(trace[0]['filters']['query'], '')
                 self.assertEqual(trace[0]['filters']['max_price_brl'], '0')
                 self.assertGreater(trace[0]['matches'], 0)
+
+    def test_plain_recommendations_query_real_catalog_without_inference(self):
+        for question in ('me recomenda uma guitarra com um bom preço',
+                         'me recomneda uma guitarra com um bom preço',
+                         'Me recomenda uma guitara com um bom preco'):
+            with self.subTest(question=question):
+                model = Mock(side_effect=AssertionError('No model lookup needed'))
+                answer, trace = respond(question, self.history, chat_fn=model)
+                model.assert_not_called()
+                self.assertIn('Fender Telecaster Player Series', answer)
+                self.assertIn('R$ 5.400,00', answer)
+                self.assertNotIn('Não encontrei esse modelo', answer)
+                self.assertEqual(trace[0]['filters']['category'], 'guitarra')
+                self.assertEqual(trace[0]['matches'], 5)
+                self.assertEqual(trace[0]['invoked_by'], 'application_catalog_lookup')
+
+    def test_direct_recommendation_does_not_drop_constraints_or_names(self):
+        for question in ('me recomenda uma guitarra Fender com um bom preço',
+                         'me recomenda uma guitarra de sete cordas',
+                         'me recomenda uma guitarra até R$ 1000',
+                         'me recomenda uma guitarra com frete grátis',
+                         'me recomenda uma guitarra com um bom preço no PIX'):
+            with self.subTest(question=question):
+                self.assertIsNone(_simple_category_recommendation(question))
+
+    def test_direct_catalog_failure_never_claims_product_is_missing(self):
+        with patch('zubumafu.agent.search_products', side_effect=OSError):
+            answer, trace = respond('me recomenda uma guitarra com um bom preço')
+        self.assertIn('Não consegui consultar', answer)
+        self.assertNotIn('esse modelo', answer)
+        self.assertEqual(trace[0]['status'], 'error')
 
     def test_pix_followup_receives_pricing_result_and_preserves_history(self):
         calls = []
