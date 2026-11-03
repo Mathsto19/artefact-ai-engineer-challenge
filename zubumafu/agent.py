@@ -27,16 +27,36 @@ def respond(
     user_message: str,
     history: list[dict[str, str]] | None = None,
     chat_fn: Callable[..., Any] | None = None,
+    *, on_event: Callable[[dict], None] | None = None,
+) -> tuple[str, list[dict[str, object]]]:
+    """Reply with optional live workflow/verified-output events, never reasoning."""
+    emit = on_event or (lambda event: None)
+    emit({'type': 'stage', 'label': 'Lendo sua mensagem'})
+    reply, trace = _respond(user_message, history, chat_fn, emit)
+    emit({'type': 'answer', 'text': reply, 'complete': True})
+    return reply, trace
+
+
+def _respond(
+    user_message: str,
+    history: list[dict[str, str]] | None,
+    chat_fn: Callable[..., Any] | None,
+    emit: Callable[[dict], None],
 ) -> tuple[str, list[dict[str, object]]]:
     """Return a source-backed reply and query/reference/clarification metadata.
 
     The caller owns the visible conversation history. Ollama message objects and
     tool responses are local to this one call, not persisted between sessions.
     """
+    greeting = ' '.join(re.sub(r'[^\w\s]', '', _normalize(user_message)).split())
+    if re.fullmatch(r'(oi+|oie+|ola+|bom dia|boa tarde|boa noite|e ai)( zubumafu)?( tudo (bem|bom))?', greeting):
+        return ("Oi! Como posso ajudar?" if history else
+                "Oi! Sou o Zubumafu, assistente do Empório da Música. Como posso ajudar?"), []
     if outside_scope(user_message):
         return "Meu foco é ajudar com instrumentos musicais e o atendimento do Empório da Música. Posso ajudar com algo da loja?", []
     string_reference = referenced_strings(user_message, history or [])
     if string_reference is not None:
+        emit({'type': 'stage', 'label': 'Consultando as opções anteriores'})
         # A narrow reference/filter operation is deterministic. Re-query real
         # records without waiting for the model to repeat a known lookup.
         try:
@@ -50,14 +70,6 @@ def respond(
             'source': result['source'], 'filters': result['filters'], 'matches': result['total_matches'],
             'reference_products': proof, 'invoked_by': 'application_reference_lookup',
             'reply_origin': 'python_catalog_result_template'}]
-    if chat_fn is None:
-        from .model import create_chat
-
-        chat_fn = create_chat()
-
-    messages: list[Any] = [{"role": "system", "content": SYSTEM_PROMPT}]
-    messages.extend((history or [])[-12:])
-    messages.append({"role": "user", "content": user_message + "\n/no_think"})
     trace: list[dict[str, object]] = []
     order_input = order_context(user_message, history or [])
     required_tool = "get_order_status" if order_input is not None else _required_tool(user_message, history or [])
@@ -68,18 +80,47 @@ def respond(
         tool_names = [required_tool]
     else:
         tool_names = list(TOOLS)
+    # Known educational music questions need no store/customer lookup. Only
+    # this source-free branch can reveal streamed final model text.
+    musical_explanation = required_tool is None and order_input is None and any(
+        word in _normalize(user_message) for word in ('ritmo', 'praticar', 'harmonia', 'acorde', 'escala musical'))
+    if musical_explanation:
+        tool_names = []
+    messages: list[Any] = [{'role': 'system', 'content': SYSTEM_PROMPT}]
+    messages.extend((history or [])[-12:])
+    messages.append({'role': 'user', 'content': user_message + '\n/no_think'})
+    if chat_fn is None:
+        from .model import create_chat
+        chat_fn = create_chat(
+            on_progress=lambda: emit({'type': 'progress'}),
+            on_text=(lambda text: emit({'type': 'answer', 'text': text, 'complete': False}))
+                    if musical_explanation else None,
+        )
     order_result = None
     catalog_result = pricing_result = None
 
     for attempt in range(TOOL_CYCLE_LIMIT):
+        policy_clarification = _verified_return_clarification(user_message, history or [], trace)
+        product_template = required_tool in {None, 'product_pricing', 'search_products'} and (
+            catalog_result is not None or (pricing_result is not None and
+            pricing_result.get('status') in {'ok', 'missing_product', 'not_found', 'ambiguous_product'}))
+        template_ready = order_result is not None or product_template or policy_clarification is not None
+        request_messages = messages
+        if template_ready:
+            # Results still go back to the real model. Python already owns this
+            # reply; avoid generating a long draft that will be discarded.
+            request_messages = [*messages, {'role': 'system', 'content': (
+                'Os resultados verificados serão apresentados diretamente pelo código. '
+                'Não reescreva os dados nem faça outra consulta. Responda somente OK. /no_think')}]
+        emit({'type': 'stage', 'label': 'Conferindo os resultados' if template_ready else 'Preparando a resposta'})
         try:
             response = chat_fn(
                 model=os.environ.get("OLLAMA_MODEL", MODEL),
-                messages=messages,
-                tools=[TOOLS[name] for name in tool_names],
+                messages=request_messages,
+                tools=[] if template_ready else [TOOLS[name] for name in tool_names],
                 think=False,
                 stream=False,
-                options={"temperature": 0.3, "num_ctx": 4096, "num_predict": 2048},
+                options={"temperature": 0.3, "num_ctx": 4096, "num_predict": 64 if template_ready else 2048},
             )
         except (ConnectionError, TimeoutError, OSError):
             return "Não consegui acessar o Ollama agora. Confira se ele está aberto e tente novamente.", trace
@@ -125,38 +166,18 @@ def respond(
                     )})
                     continue
                 return "Não consegui confirmar essa informação nos arquivos da loja. A consulta aos arquivos falhou ou não foi executada. Pode tentar reformular a pergunta?", trace
+            if policy_clarification is not None and required_tool == 'search_store_policies':
+                field, content = policy_clarification
+                for item in trace:
+                    if item['tool'] == 'search_store_policies' and item['status'] == 'ok':
+                        item.update(clarification_field=field, reply_origin='source_verified_clarification_template')
+                return clean_model_answer(_with_policy_sources(content, trace)), trace
             content = _visible_content(getattr(message, "content", None) or "")
             if getattr(response, "done_reason", None) == "length":
                 return "Não consegui concluir a resposta. Vamos tentar uma pergunta mais específica?", trace
             if not content:
                 return "Não consegui preparar uma resposta agora. Tente novamente, por favor.", trace
-            clarification = _return_clarification(user_message, history or [])
-            return_source_verified = any(
-                item["tool"] == "search_store_policies" and item["status"] == "ok"
-                and item.get("topic") == "returns" and 4 in item.get("chapters", [])
-                for item in trace
-            )
-            if required_tool == "search_store_policies" and clarification and return_source_verified:
-                # The model draft must not skip missing return information or
-                # invent a submission procedure. The source was retrieved and
-                # returned to the model; Python controls these two safe questions.
-                field, content = clarification
-                for item in trace:
-                    if item["tool"] == "search_store_policies" and item["status"] == "ok":
-                        item["clarification_field"] = field
-                        item["reply_origin"] = "source_verified_clarification_template"
-            source_notes = []
-            for item in trace:
-                if item["tool"] != "search_store_policies" or item["status"] != "ok":
-                    continue
-                for reference in item.get("references", []):
-                    pages = ", ".join(str(page) for page in reference["pages"])
-                    note = f"Manual de políticas v2.1, seção(ões) {reference['chapter']}, página(s) {pages}"
-                    if note not in source_notes:
-                        source_notes.append(note)
-            if source_notes:
-                content += "\n\n*Fonte consultada: " + "; ".join(source_notes) + ".*"
-            return clean_model_answer(content), trace
+            return clean_model_answer(_with_policy_sources(content, trace)), trace
 
         if len(calls) > 5:
             return "A consulta pediu operações demais. Vamos tentar uma pergunta mais específica?", trace
@@ -170,6 +191,11 @@ def respond(
         })
         for call in calls:
             name = call.function.name
+            tool_labels = {'search_products': 'Consultando o catálogo',
+                           'get_product_pricing': 'Conferindo preços e descontos',
+                           'search_store_policies': 'Consultando o manual da loja',
+                           'get_order_status': 'Conferindo os dados do pedido'}
+            emit({'type': 'stage', 'label': tool_labels.get(name, 'Verificando a consulta')})
             arguments = call.function.arguments or {}
             overrides = []
             normalized_message = _normalize(user_message)
@@ -226,12 +252,48 @@ def respond(
                         "references": [{"chapter": section["chapter"], "pages": section["pages"]} for section in sections],
                         "ambiguities": decoded.get("ambiguities", []),
                     })
+                    # Show actual verified text as soon as it is available,
+                    # while the bounded tool-result round-trip completes.
+                    preview = None
+                    if len(calls) == 1:
+                        if name == 'search_products' and status == 'ok' and required_tool in {None, 'product_pricing', 'search_products'}:
+                            preview = render_catalog(decoded)
+                        elif name == 'get_product_pricing' and required_tool in {None, 'product_pricing', 'search_products'}:
+                            preview = render_pricing(decoded, requested_budget(user_message))
+                        elif name == 'get_order_status':
+                            preview = render_order_result(decoded)
+                        elif name == 'search_store_policies' and required_tool == 'search_store_policies':
+                            clarification = _verified_return_clarification(user_message, history or [], trace)
+                            if clarification:
+                                preview = _with_policy_sources(clarification[1], trace)
+                    if preview:
+                        emit({'type': 'answer', 'text': preview, 'complete': False})
                 except (TypeError, ValueError, OSError) as exc:
                     result = json.dumps({"error": type(exc).__name__})
                     trace.append({"tool": name, "status": "error"})
             messages.append({"role": "tool", "tool_name": name, "content": result})
 
     return "A consulta ficou mais complexa do que o esperado. Vamos tentar uma pergunta mais específica?", trace
+
+
+def _verified_return_clarification(message: str, history: list[dict], trace: list[dict]):
+    if any(item['tool'] == 'search_store_policies' and item['status'] == 'ok'
+           and item.get('topic') == 'returns' and 4 in item.get('chapters', []) for item in trace):
+        return _return_clarification(message, history)
+    return None
+
+
+def _with_policy_sources(content: str, trace: list[dict]) -> str:
+    notes = []
+    for item in trace:
+        if item['tool'] != 'search_store_policies' or item['status'] != 'ok':
+            continue
+        for reference in item.get('references', []):
+            pages = ', '.join(str(page) for page in reference['pages'])
+            note = f"Manual de políticas v2.1, seção(ões) {reference['chapter']}, página(s) {pages}"
+            if note not in notes:
+                notes.append(note)
+    return content + ('\n\n*Fonte consultada: ' + '; '.join(notes) + '.*' if notes else '')
 
 
 def _mark_reply_origin(trace: list[dict], tool: str, origin: str) -> None:

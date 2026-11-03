@@ -35,13 +35,15 @@ py -3.12 -m venv .venv
 
 Open the local URL printed by Streamlit, normally `http://localhost:8501`. Calling the virtual environment's Python directly avoids PowerShell activation-policy issues. Keep the Ollama application running. If `ollama` is not recognized after installation, reopen the terminal.
 
-Ask **"Quais violões disponíveis custam até R$ 1000?"**. Expand **"Fontes e ferramentas consultadas"** to inspect source/filter/reference metadata. Use **"＋ Nova conversa"** to create an independent thread; select a sidebar title to reopen an earlier one. **"Excluir"** asks for confirmation and deletes only that thread.
+Ask **"Quais violões disponíveis custam até R$ 1000?"**. Expand **"Fontes e ferramentas consultadas"** to inspect source/filter/reference metadata. Use **"Nova conversa"** to create an independent thread; select a sidebar title to reopen an earlier one. **"Excluir"** asks for confirmation and deletes only that thread. When the sidebar is collapsed, its native reopen button remains visible in the top toolbar.
 
 The interface is inspired by messaging applications; it is not a WhatsApp integration. The sidebar separates personal conversations from test conversations. Seven built-in validation scenarios supply prompts and expected criteria. A new test thread starts empty: answers appear only when a prompt is executed, and the scenario is not automatically marked as passed.
 
 For a review without running inference, **Minhas conversas** also lists four recorded examples: catalog/string types, promotion/PIX/budget, returns and order consultation. Click a title to read the actual questions/replies, source traces and observed timings, or download the original Portuguese dialogue as Markdown with English provenance notes. These read-only records load from the latest accepted reports in `docs/evidence/`; they work without a running Ollama server and are not inserted into private SQLite history. They cannot be continued or deleted from the interface. Use **Nova conversa** or a validation scenario to run a new interaction. The order email stays redacted, and independent negative checks are not joined into the displayed conversations. The original bilingual milestone transcripts in `examples/` remain historical records.
 
 The repository supplies a light Streamlit theme in `.streamlit/config.toml`, with consistent text/input/sidebar colors. The interface uses plain labels and monochrome icons, without emojis. The assistant is instructed to avoid emojis and generated free-form replies are filtered accordingly; older saved messages/titles are displayed without emojis while their original stored text is preserved. Restart Streamlit after changing theme configuration, then refresh the browser.
+
+Simple standalone greetings return immediately from a Python template without inference; a greeting combined with a product/policy question still follows the normal lookup path. During inference the interface displays real workflow stages and elapsed time, updated from streamed backend activity. Recognized general musical explanations can display final text incrementally after the reasoning delimiter. Commercial/order replies never stream model drafts: verified Python-rendered text appears as soon as its source lookup completes, while the short tool-result acknowledgement finishes. No artificial typing delays or reasoning text are displayed. Partial output is not stored; only the completed exchange is saved.
 
 **Local-history privacy:** messages, including emails typed for a demo order, are stored unencrypted in `.local/conversations.sqlite3`. Titles redact emails; saved traces use a metadata whitelist and exclude raw tool payloads and reasoning. The folder and SQLite files are ignored by Git. This is a single-user demonstration, without accounts or production authentication. Use a trusted machine. Chat deletion is logical database deletion, not guaranteed forensic erasure from disk or backups. History created in this interface survives application/process restarts; earlier memory-only sessions are not automatically imported.
 
@@ -95,6 +97,14 @@ Run the additional quality scenarios:
 
 This checks neutral catalog wording and string types, a steel-string follow-up, unavailable/unknown products, an off-topic redirect and recovery from an unavailable local model endpoint. Off-topic requests can be redirected without a model call. Review individual outputs and source filters; these scenarios do not establish universal reliability.
 
+Check greeting latency, actual streamed musical text and early verified catalog output separately:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_responsiveness.py --output tmp/responsiveness-smoke.json
+```
+
+The greeting bypasses inference. Other scenarios use the actual model and record first-preview/completion timings and workflow events, without saving reasoning or intermediate model text. These are backend observations, not browser end-to-end measurements or general performance guarantees.
+
 ### Optional configuration
 
 | Environment variable | Default | Purpose |
@@ -114,9 +124,10 @@ Set variables in the terminal before starting the app, for example `$env:OLLAMA_
 | `zubumafu/streamlit_ui.py` | Messaging layout, thread selection/deletion, scenario buttons and source evidence. |
 | `zubumafu/conversations.py` | Atomic SQLite exchanges, independent thread IDs, safe trace metadata and scoped deletion. |
 | `zubumafu/demo_scenarios.py` | Seven prompt/criteria templates, without seeded or fabricated answers. |
+| `zubumafu/recorded_examples.py` | Read-only review of four previously recorded acceptance conversations. |
 | `zubumafu/response_quality.py` | Source-based catalog/price presentation, explicit budget comparison and bounded output cleanup. |
 | `zubumafu/agent.py` | Bounded model/tool loop and customer-facing output handling. |
-| `zubumafu/model.py` | Lazy SDK import, local endpoint and timeout configuration. |
+| `zubumafu/model.py` | Local SDK configuration, streamed tool aggregation and private-reasoning buffering. |
 | `zubumafu/persona.py` | Persona, scope and instructions to use verified store facts. |
 | `zubumafu/catalog.py` | Read-only CSV search, input validation, filters and BRL display formatting. |
 | `zubumafu/pricing.py` | Promotion lookup, non-cumulative PIX rules and deterministic rounded BRL prices. |
@@ -168,7 +179,7 @@ No external source is used for store facts. General musical knowledge may assist
 - Catalog, policies, promotion/PIX pricing and demonstrative order lookup are implemented. Installment and freight calculations remain outside the current implementation.
 - Automated tests with a simulated model and actual model acceptance runs are separate evidence. This limited sample does not establish reliability, latency across workloads or full challenge compliance.
 - The installed Qwen3 4B template emitted reasoning despite requests with `think=False`. The application also uses `/no_think` as a steering instruction and strips labeled reasoning from visible content. This is an output safeguard, not proof that reasoning generation was disabled. Latency remains a limitation.
-- Each reply is bounded to three model requests, five tools per request, 2,048 generated tokens per request and a 4,096-token context. The visible history includes at most 12 previous messages in each request; long conversations can exceed the context budget. Truncated model drafts produce a fallback; verified order replies can still be safely rendered from the completed tool result.
+- Each reply is bounded to three model requests, five tools per request and a 4,096-token context. Initial requests allow at most 2,048 generated tokens; the acknowledgement after a controlled source lookup allows 64. The visible history includes at most 12 prior messages; long conversations can exceed the context budget. Truncated source-free drafts produce a fallback; completed verified fields can still render a controlled reply after a truncated acknowledgement.
 - Source-intent checks are heuristic. Policy questions require the PDF tool; product prices require a fresh catalog or pricing lookup. A general policy lookup alone cannot authorize a specific product quote. Return follow-ups about channel/receipt retain their policy context; price/PIX follow-ups use recent conversation context. The code does not yet verify every generated factual statement, product reference or model-written citation against tool results.
 - Historical catalog runs assumed a beginner profile and mixed nylon/steel descriptions. Controlled product replies address those particular errors; general musical and policy prose still needs broader evaluation. Historical transcripts are retained as observed evidence, not rewritten to suggest the fixes existed earlier.
 - The interface provides local durable history and demonstrative order/email matching, without production authentication or rate limits. Context heuristics can miss phrasing; start a new conversation or restate the order number when necessary.

@@ -141,7 +141,8 @@ class QualityTests(unittest.TestCase):
 
         def fake_chat(**kwargs):
             attempts.append(kwargs)
-            self.assertEqual([function.__name__ for function in kwargs['tools']], ['get_product_pricing'])
+            self.assertEqual([function.__name__ for function in kwargs['tools']],
+                             ['get_product_pricing'] if len(attempts) == 1 else [])
             if len(attempts) == 1:
                 return SimpleNamespace(message=SimpleNamespace(content='', tool_calls=[tool('get_product_pricing', product_id=127, payment_method='standard')]))
             return SimpleNamespace(message=SimpleNamespace(content='PIX reduz mais o preço.', tool_calls=[]))

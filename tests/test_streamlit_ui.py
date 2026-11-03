@@ -130,6 +130,23 @@ class StreamlitUITests(unittest.TestCase):
             self.assertEqual(len(app.chat_input), 0)
             backend.assert_not_called()
 
+    def test_progress_and_partial_output_save_only_the_completed_exchange(self):
+        def backend(question, history, on_event):
+            self.assertEqual(history, [])
+            on_event({'type': 'stage', 'label': 'Preparando a resposta'})
+            on_event({'type': 'progress'})
+            on_event({'type': 'answer', 'text': 'Texto parcial', 'complete': False})
+            on_event({'type': 'answer', 'text': 'Resposta concluída', 'complete': True})
+            return 'Resposta concluída', []
+        with patch('zubumafu.streamlit_ui.respond', side_effect=backend):
+            app = AppTest.from_file(APP).run(timeout=15)
+            app.chat_input[0].set_value('Pode me ajudar?').run(timeout=15)
+            self.assertFalse(app.exception)
+            messages = self.store.messages(app.session_state['chat_id'])
+            self.assertEqual([item['content'] for item in messages],
+                             ['Pode me ajudar?', 'Resposta concluída'])
+            self.assertEqual(len(app.chat_message), 2)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -85,7 +85,7 @@ class OrderGuardTests(unittest.TestCase):
         self.assertNotIn("número do pedido", reply)
 
     def test_unsolicited_order_tool_call_cannot_reveal_data(self):
-        reply, trace = self.run_model("Oi", {"order_id": self.identifier, "email": self.email})
+        reply, trace = self.run_model("Pode me ajudar?", {"order_id": self.identifier, "email": self.email})
         self.assertIn("Não consegui confirmar", reply)
         self.assertEqual(trace[0]["status"], "error")
         reply, trace = self.run_model(f"Pedido {self.identifier}, {self.email}", ["email"])

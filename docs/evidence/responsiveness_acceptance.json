@@ -1,0 +1,161 @@
+{
+  "recorded_at": "2026-11-02T20:41:54-03:00",
+  "model": "qwen3:4b",
+  "turns": [
+    {
+      "scenario": "greeting",
+      "question": "Oi",
+      "answer": "Oi! Sou o Zubumafu, assistente do Empório da Música. Como posso ajudar?",
+      "trace": [],
+      "elapsed_seconds": 0.0001,
+      "first_preview_seconds": null,
+      "preview_updates": 0,
+      "model_progress_events": 0,
+      "first_preview_matches_final": false,
+      "unsafe_markup": false,
+      "stages": [
+        {
+          "label": "Lendo sua mensagem",
+          "elapsed_seconds": 0.0
+        }
+      ]
+    },
+    {
+      "scenario": "musical_explanation",
+      "question": "Como posso praticar ritmo? Responda em até três frases.",
+      "answer": "Para praticar ritmo, comece com exercícios simples como bater palmas em ritmo constante ou usar um metrônomo digital gratuito. Experimente músicas de ritmo simples, como samba ou MPB, para treinar a precisão e a coordenação. Lembre-se de que a consistência é mais importante que a velocidade inicial.",
+      "trace": [],
+      "elapsed_seconds": 27.2135,
+      "first_preview_seconds": 25.5892,
+      "preview_updates": 79,
+      "model_progress_events": 1296,
+      "first_preview_matches_final": false,
+      "unsafe_markup": false,
+      "stages": [
+        {
+          "label": "Lendo sua mensagem",
+          "elapsed_seconds": 0.0
+        },
+        {
+          "label": "Preparando a resposta",
+          "elapsed_seconds": 0.6066
+        }
+      ]
+    },
+    {
+      "scenario": "catalog",
+      "question": "Quais violões disponíveis custam até R$ 1.000?",
+      "answer": "Encontrei opções do catálogo, ordenadas por preço final:\n\n- **Tagima Memphis AC-39 Nylon Natural** — R$ 429,90 · cordas de nylon · 15 unidade(s) no estoque demonstrativo\n- **Rozini RC-104 Nylon Estudante** — R$ 459,90 · cordas de nylon · 10 unidade(s) no estoque demonstrativo\n- **Shelby SN-100 Folk Aço Preto** — R$ 549,00 · cordas de aço · 5 unidade(s) no estoque demonstrativo\n\nAs opções mostradas cabem no orçamento de R$ 1.000,00.\n\n*Mostrei 3 de 12 resultado(s) do arquivo; preços e estoque são demonstrativos, não consultas ao vivo.*",
+      "trace": [
+        {
+          "tool": "search_products",
+          "status": "ok",
+          "matches": 12,
+          "filters": {
+            "category": "violão",
+            "query": "",
+            "max_price_brl": "1000",
+            "budget_applies_to": "final_price_brl",
+            "available_only": true,
+            "payment_method": "standard"
+          },
+          "source": "data/desafio_tecnico_ai_eng - products.csv",
+          "sources": null,
+          "promotion_source": "data/desafio_tecnico_ai_eng - promotions.csv",
+          "product_id": null,
+          "pricing": null,
+          "price_quotes": [
+            {
+              "product_id": "83",
+              "list_price_display_brl": "R$ 429,90",
+              "final_price_display_brl": "R$ 429,90",
+              "discount_percent": "0",
+              "discount_type": "none"
+            },
+            {
+              "product_id": "85",
+              "list_price_display_brl": "R$ 459,90",
+              "final_price_display_brl": "R$ 459,90",
+              "discount_percent": "0",
+              "discount_type": "none"
+            },
+            {
+              "product_id": "89",
+              "list_price_display_brl": "R$ 549,00",
+              "final_price_display_brl": "R$ 549,00",
+              "discount_percent": "0",
+              "discount_type": "none"
+            },
+            {
+              "product_id": "88",
+              "list_price_display_brl": "R$ 579,90",
+              "final_price_display_brl": "R$ 579,90",
+              "discount_percent": "0",
+              "discount_type": "none"
+            },
+            {
+              "product_id": "81",
+              "list_price_display_brl": "R$ 599,90",
+              "final_price_display_brl": "R$ 599,90",
+              "discount_percent": "0",
+              "discount_type": "none"
+            },
+            {
+              "product_id": "84",
+              "list_price_display_brl": "R$ 689,00",
+              "final_price_display_brl": "R$ 689,00",
+              "discount_percent": "0",
+              "discount_type": "none"
+            }
+          ],
+          "order_id": null,
+          "next_field": null,
+          "source_type": "provided_snapshot_not_live_inventory",
+          "argument_overrides": [],
+          "topic": null,
+          "pages": [],
+          "chapters": [],
+          "references": [],
+          "ambiguities": [],
+          "reply_origin": "python_catalog_result_template"
+        }
+      ],
+      "elapsed_seconds": 19.1601,
+      "first_preview_seconds": 16.9206,
+      "preview_updates": 1,
+      "model_progress_events": 837,
+      "first_preview_matches_final": true,
+      "unsafe_markup": false,
+      "stages": [
+        {
+          "label": "Lendo sua mensagem",
+          "elapsed_seconds": 0.0
+        },
+        {
+          "label": "Preparando a resposta",
+          "elapsed_seconds": 0.1543
+        },
+        {
+          "label": "Consultando o catálogo",
+          "elapsed_seconds": 16.9177
+        },
+        {
+          "label": "Conferindo os resultados",
+          "elapsed_seconds": 16.9206
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "greeting_bypasses_model_and_commerce": true,
+    "greeting_backend_under_one_second": true,
+    "general_musical_answer_streamed_before_completion": true,
+    "actual_stream_received": true,
+    "verified_catalog_visible_before_completion": true,
+    "catalog_source_and_template_preserved": true,
+    "catalog_still_uses_correct_strings": true,
+    "no_visible_reasoning_markup": true
+  },
+  "passed": true,
+  "evaluation_limit": "Isolated backend timings, not browser end-to-end or general benchmarks. Greeting uses a Python template with no model call. General musical final text streams only after the reasoning delimiter. Commercial preview is rendered from verified source fields, not streamed model drafts. No reasoning text or partial model drafts are saved."
+}

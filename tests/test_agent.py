@@ -28,7 +28,7 @@ class AgentTests(unittest.TestCase):
                 done_reason="length",
             )
 
-        reply, _ = respond("Oi", chat_fn=fake_chat)
+        reply, _ = respond("Como praticar ritmo?", chat_fn=fake_chat)
         self.assertIn("Não consegui concluir", reply)
         self.assertNotIn("Resposta incompleta", reply)
 
@@ -41,14 +41,14 @@ class AgentTests(unittest.TestCase):
                 def fake_chat(**kwargs):
                     return SimpleNamespace(message=SimpleNamespace(content=content, tool_calls=[]))
 
-                reply, _ = respond("Oi", chat_fn=fake_chat)
+                reply, _ = respond("Como praticar ritmo?", chat_fn=fake_chat)
                 self.assertEqual(reply, "Olá! Como posso ajudar?")
 
     def test_incomplete_reasoning_is_not_returned_to_customer(self):
         def fake_chat(**kwargs):
             return SimpleNamespace(message=SimpleNamespace(content="<think>Unfinished private planning", tool_calls=[]))
 
-        reply, _ = respond("Oi", chat_fn=fake_chat)
+        reply, _ = respond("Como praticar ritmo?", chat_fn=fake_chat)
         self.assertIn("Não consegui preparar", reply)
 
     def test_too_many_tool_calls_are_not_partially_executed(self):

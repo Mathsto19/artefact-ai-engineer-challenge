@@ -9,6 +9,7 @@ import streamlit as st
 import logging
 import os
 import sqlite3
+import time
 from pathlib import Path
 
 from .agent import respond
@@ -69,9 +70,11 @@ def main() -> None:
         :root { color-scheme: light; }
         .stApp { background: #f4f7f6; color: #18332f; }
         [data-testid="stHeader"] { background: #f4f7f6; }
-        [data-testid="stToolbar"] { display: none; }
+        [data-testid="stExpandSidebarButton"] {
+            color: #116b5b; background: #fff; border: 1px solid #b8cdc3;
+        }
         [data-testid="stMainBlockContainer"] {
-            max-width: 1120px; padding: 2rem 2.5rem 4rem;
+            max-width: 1120px; padding: 4.5rem 2.5rem 4rem;
         }
         [data-testid="stSidebar"] { background: #fff; border-right: 1px solid #dde6e2; }
         [data-testid="stSidebarUserContent"] { padding-top: 1.5rem; }
@@ -112,7 +115,7 @@ def main() -> None:
         [data-testid="stExpander"] { background: #fff; border-radius: 8px; }
         ::selection { background: #c9e4d9; color: #18332f; }
         @media (max-width: 720px) {
-            [data-testid="stMainBlockContainer"] { padding: 1rem 1rem 3rem; }
+            [data-testid="stMainBlockContainer"] { padding: 4.25rem 1rem 3rem; }
             .zubu-banner h2 { font-size: 1.15rem; }
         }
     </style>
@@ -257,16 +260,35 @@ def main() -> None:
         with st.chat_message("Você", avatar=":material/person:"):
             st.markdown(strip_emojis(question))
         with st.chat_message("Zubumafu", avatar=":material/graphic_eq:"):
-            with st.spinner("Zubumafu está consultando as informações..."):
-                try:
-                    answer, trace = respond(question, history=prior)
-                except Exception:
-                    logger.exception("Unable to complete the chat request")
-                    answer, trace = (
-                        "Não consegui acessar o modelo local agora. Confira o Ollama e tente novamente.", []
-                    )
+            status = st.status("Lendo sua mensagem", expanded=False)
+            output = st.empty()
+            started = time.perf_counter()
+            current_stage = "Lendo sua mensagem"
+            last_update = 0.0
+
+            def show_event(event: dict) -> None:
+                nonlocal current_stage, last_update
+                elapsed = time.perf_counter() - started
+                if event['type'] == 'stage':
+                    current_stage = event['label']
+                if event['type'] == 'answer':
+                    output.markdown(strip_emojis(event['text']))
+                if event['type'] != 'progress' or elapsed - last_update >= .25:
+                    status.update(label=f"{current_stage} · {elapsed:.1f} s")
+                    last_update = elapsed
+
+            try:
+                answer, trace = respond(question, history=prior, on_event=show_event)
+                status.update(label=f"Resposta pronta · {time.perf_counter() - started:.1f} s",
+                              state="complete", expanded=False)
+            except Exception:
+                logger.exception("Unable to complete the chat request")
+                answer, trace = (
+                    "Não consegui acessar o modelo local agora. Confira o Ollama e tente novamente.", []
+                )
+                status.update(label="Não consegui concluir a resposta", state="error", expanded=False)
             answer = strip_emojis(answer)
-            st.markdown(answer)
+            output.markdown(answer)
         try:
             store.add_exchange(st.session_state.chat_id, question, answer, trace)
         except (sqlite3.Error, OSError):

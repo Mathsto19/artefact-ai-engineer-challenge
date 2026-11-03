@@ -291,3 +291,40 @@ The persona now prohibits emojis. Free-form answer cleanup removes emoji sequenc
 Added four read-only recorded dialogues under **Minhas conversas**, using the latest accepted catalog, pricing, policy and order reports. They are recordings of previous executions, not generated fixtures or new model runs. Only the first two catalog turns and first three order turns belong to those displayed dialogues; separate unavailable/unknown/out-of-scope and denial checks are excluded. The original evidence and historical bilingual examples are unchanged.
 
 The complete suite passed **124 tests**. New coverage verifies that displayed turns match the accepted source records, exports retain original answers, order email remains redacted, independent checks stay separate, and no evidence is rewritten. AppTest opens all four recordings without calling the backend, confirms no input/delete controls or SQLite imports, and checks that switching to personal/new chats restores normal interaction without mixing histories. A missing evidence file shows an error without generating a replacement. No new real-model execution was required or claimed: the feature only reads existing evidence. Visual confirmation of the updated sidebar remains separate from AppTest.
+
+## Sidebar reopening, greeting latency and incremental output
+
+The installed Streamlit frontend places `stExpandSidebarButton` inside `stToolbar`. The custom CSS hid the entire toolbar, including the reopen control. Removed that rule, styled the native reopen button and increased top padding so content does not cover the header. This is based on the installed frontend code; no connected-browser interaction/visual approval is claimed.
+
+Standalone greetings now use a narrow full-message Python template with no model request. Compound greeting/product questions still use the guarded lookup path. The UI shows actual workflow stages and elapsed time from streamed SDK activity. For recognized general musical explanations, final text streams after the complete reasoning delimiter. Commercial/order/return-clarification previews are Python-rendered only after a qualifying source result. The result still reaches the model, with no advertised tools and a 64-token acknowledgement cap instead of a long discarded draft. No artificial typing delay is added. Only the completed exchange is saved to SQLite.
+
+### Offline verification
+
+The full suite passed **132 tests**, including the preceding 124. Added checks cover greeting bypass versus compound requests, actual SDK chunk aggregation/statistics, fragmented private delimiters, transport failure during streaming, early verified output before the result round-trip, failure paths without invented previews and persistence of only the final exchange. Existing reasoning/truncation and unsolicited-order tests now use non-greeting inputs so they still exercise the model path. No dependencies changed.
+
+### Measured responsiveness
+
+A preliminary direct SDK greeting took **11.072 seconds** and emitted reasoning markup. A final-assistant-prefix experiment and a temporary empty-think-template experiment did not reliably remove that behavior. Neither was adopted, and the temporary alias was removed; the original model/template remain unchanged.
+
+The accepted responsiveness run was recorded at **2026-11-02 20:41:54 -03:00**. All eight checks passed; see [responsiveness evidence](evidence/responsiveness_acceptance.json).
+
+| Scenario | First visible answer/preview | Total backend time | Interpretation |
+| --- | --- | --- | --- |
+| Standalone greeting | Immediate final template | 0.0001 s | No inference or commercial lookup; not a browser round-trip measurement. |
+| Short musical explanation | 25.5892 s | 27.2135 s | 79 incremental output events after private reasoning; the long initial delay remains a limitation. |
+| Catalog query | 16.9206 s | 19.1601 s | Verified source-rendered preview before the short final model acknowledgement. |
+
+The catalog regression subsequently took **90.29 seconds**, including a truncated source-free initial request and bounded repair, despite passing all 11 source/quality checks. This variability means the 19-second run is **not** a general latency guarantee. An additional compact-router prompt experiment failed to request a source and returned the safe fallback after two truncated generations; it was rejected and the previously verified full prompt retained. Experimental timings are not silently treated as production improvements.
+
+### Actual source regressions with the accepted configuration
+
+All four acceptance scripts used the real streaming SDK adapter (via its progress callback), with actual tool results returned to the model. They passed the existing structural checks; review of displayed fields confirmed the source facts. The reports below were captured before the rejected compact-prompt experiment and correspond to the retained full-prompt configuration.
+
+| Scenario | Checks | Observed elapsed time | Evidence |
+| --- | --- | --- | --- |
+| Catalog | 11/11 | 90.29 s | [catalog](evidence/catalog_after_responsiveness.json) |
+| Price / PIX / R$ 340 budget | 11/11 | 14.42 / 13.36 / 39.29 s | [pricing](evidence/pricing_after_responsiveness.json) |
+| Return channel / receipt date | 11/11 | 13.51 / 26.41 s | [policies](evidence/policies_after_responsiveness.json) |
+| Order number / email / verified order | 16/16 including two denials | 3.68 / 14.43 / 6.12 s; denials 13.31 / 13.81 s | [orders](evidence/orders_after_responsiveness.json) |
+
+Historical order R$ 359.00, absent tracking/estimate, generic denials, non-cumulative PIX and section 4/page 4 references were preserved. Public evidence contains no raw reasoning or full emails. This increment fixes the greeting delay and makes ongoing work/output visible; it does **not** resolve all Qwen inference latency or establish universal grounding. Broader latency improvements require separate measured work. Earlier recorded sidebar examples remain immutable historical conversations.
