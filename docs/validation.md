@@ -388,3 +388,9 @@ All **140 tests passed**. AppTest now verifies the input's native `is_auto_posit
 The earlier routing/prompt change still depended on model tool selection. Complete category-only requests with an affordability phrase now call the real catalog directly in Python, including the reported `recomneda` spelling and the bounded `guitara` alias. The trace explicitly records `application_catalog_lookup`; it does not claim a model tool call. This path sorts available products by final price without inventing a budget. Full matching excludes requests with brands, specifications, numeric budgets, shipping or PIX constraints so those remain in the existing tool flow.
 
 All **144 tests passed**. New tests verify real guitar results, no model invocation, preservation of constraints, catalog-error handling, and a Streamlit exchange repeated after an earlier model-not-found reply. Original failed history is retained; a new submission produces the corrected result. [Direct catalog evidence](evidence/recommendation_direct_catalog.json) records both spellings, actual CSV results and execution times without inference. This does not resolve latency for other model-dependent requests.
+
+## Composer width within the conversation layout
+
+The native bottom composer now shares the main area's maximum width and horizontal padding. With navigation open on desktop, it uses the conversation column's width and right alignment, matching the 1:3 layout and large column gap. With navigation hidden it fills the available conversation width; narrow screens retain full-width input with reduced margins. Native bottom anchoring remains enabled.
+
+All **144 tests passed**, including bottom-position metadata, navigation/theme changes and real-catalog UI submission. This CSS adjustment requires user browser review for final visual alignment.

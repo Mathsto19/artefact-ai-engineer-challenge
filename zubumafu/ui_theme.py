@@ -128,9 +128,22 @@ def theme_css(mode: str) -> str:
         [data-testid="stJson"], .stApp pre, .stApp code { background: var(--z-surface-alt); color: var(--z-text); }
         [data-testid="stJson"] * { background-color: transparent !important; color: var(--z-text) !important; }
         [data-testid="stBottom"], [data-testid="stBottomBlockContainer"] { background: var(--z-bg); }
+        [data-testid="stBottomBlockContainer"] {
+            max-width: 1480px !important; width: 100%; margin-inline: auto;
+            padding: .75rem 2rem 1rem !important; box-sizing: border-box;
+        }
+        /* Match the 1:3 conversation columns and their large (4rem) gap,
+           while preserving Streamlit's native bottom anchoring. */
+        @media (min-width: 721px) {
+            .stApp:has(.st-key-conversation_navigation)
+            [data-testid="stBottomBlockContainer"] [data-testid="stChatInput"] {
+                width: calc(75% - 3rem); margin-left: auto;
+            }
+        }
         ::selection { background: var(--z-selection); color: var(--z-text); }
         @media (max-width: 720px) {
             [data-testid="stMainBlockContainer"] { padding: .5rem .75rem 2rem; }
+            [data-testid="stBottomBlockContainer"] { padding: .5rem .75rem .75rem !important; }
             .st-key-conversation_navigation { position: static; max-height: 50dvh; }
             .zubu-banner h2 { font-size: 1.15rem; }
         }
