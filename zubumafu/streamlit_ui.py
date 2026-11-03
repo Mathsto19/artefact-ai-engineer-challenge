@@ -10,6 +10,7 @@ import logging
 import os
 import sqlite3
 import time
+from html import escape
 from pathlib import Path
 
 from .agent import respond
@@ -18,6 +19,7 @@ from .conversations import ConversationStore, DEFAULT_DB
 from .demo_scenarios import SCENARIOS, SCENARIO_BY_KEY
 from .response_quality import clean_display_text, clean_display_value, split_answer_sources, chat_markdown
 from .recorded_examples import EXAMPLES, EXAMPLE_BY_KEY, load_example, recorded_date, as_markdown
+from .input_understanding import is_greeting
 
 logger = logging.getLogger(__name__)
 
@@ -184,24 +186,25 @@ def render_navigation(store, switch_chat, save_theme) -> None:
 def render_conversation(store, switch_chat, question=None) -> None:
     conversation = store.get(st.session_state.chat_id)
     scenario = SCENARIO_BY_KEY.get(conversation["scenario_id"]) if conversation["kind"] == "test" else None
-    st.markdown("""
-    <div class="zubu-banner">
-      <h2>Assistente do Empório da Música</h2>
-      <p>Consulte instrumentos, preços, políticas e pedidos.</p>
-    </div>
-    """, unsafe_allow_html=True)
     recorded_key = st.session_state.get("recorded_example")
     if recorded_key in EXAMPLE_BY_KEY:
         show_recorded_example(recorded_key)
         return
-    header, remove_column = st.columns([5, 1], vertical_alignment="center")
-    with header:
-        st.subheader(("Teste · " if scenario else "") + clean_display_text(conversation["title"]))
-        if scenario:
-            st.caption("Cenário de validação: respostas reais só aparecem após executar a pergunta.")
-    with remove_column:
-        if st.button("Excluir", key="delete_chat", use_container_width=True):
-            st.session_state.confirm_delete = True
+    title = clean_display_text(conversation["title"])
+    if is_greeting(title) or title == 'Nova conversa':
+        title = 'Conversa com Zubumafu'
+    subtitle = 'Conversa de teste' if scenario else 'Zubumafu · Assistente musical'
+    with st.container(key="conversation_header"):
+        header, remove_column = st.columns([6, 1], vertical_alignment="center")
+        with header:
+            st.markdown(f'''<div class="zubu-chat-heading">
+                <span class="zubu-heading-mark" aria-hidden="true">Z</span>
+                <div><p class="zubu-heading-label">Empório da Música</p>
+                <h2>{escape(title)}</h2><p class="zubu-heading-subtitle">{subtitle}</p></div>
+                </div>''', unsafe_allow_html=True)
+        with remove_column:
+            if st.button("Excluir", key="delete_chat", icon=":material/delete:", help="Excluir esta conversa"):
+                st.session_state.confirm_delete = True
 
     if st.session_state.get("confirm_delete"):
         st.warning("Excluir esta conversa e todas as mensagens salvas nela?")

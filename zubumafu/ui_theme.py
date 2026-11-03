@@ -102,6 +102,25 @@ def theme_css(mode: str) -> str:
         .zubu-banner { border-bottom: 1px solid var(--z-border); padding-bottom: 1.25rem; margin-bottom: 1.5rem; }
         .zubu-banner h2 { margin: 0; font-size: 1.35rem; color: var(--z-text); }
         .zubu-banner p { margin: .4rem 0 0; font-size: .95rem; color: var(--z-muted); }
+        .st-key-conversation_header {
+            background: var(--z-surface); border: 1px solid var(--z-border);
+            border-radius: 12px; padding: .9rem 1rem; margin-bottom: .75rem;
+        }
+        .zubu-chat-heading { display: flex; align-items: center; gap: .8rem; min-width: 0; }
+        .zubu-heading-mark {
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            width: 2.65rem; height: 2.65rem; border-radius: 10px;
+            background: var(--z-selection); color: var(--z-accent); font-weight: 750; font-size: 1.2rem;
+        }
+        .zubu-chat-heading h2 {
+            font-size: 1.1rem; line-height: 1.35; margin: .1rem 0;
+            padding: 0; font-weight: 650; overflow-wrap: anywhere;
+        }
+        .zubu-heading-label, .zubu-heading-subtitle { font-size: .78rem; color: var(--z-muted); margin: 0; }
+        .st-key-delete_chat button {
+            background: transparent; border-color: transparent; min-height: 2.25rem; padding: .35rem .5rem;
+        }
+        .st-key-delete_chat button:hover { background: var(--z-surface-alt); border-color: var(--z-border); }
         .zubu-sidebar-title { color: var(--z-accent); font-weight: 750; font-size: 1.5rem; }
         [data-testid="stChatMessage"] { background: var(--z-surface); color: var(--z-text);
             border: 1px solid var(--z-border); border-radius: 4px 16px 16px 16px;

@@ -418,3 +418,9 @@ Hide-navigation and Appearance controls now live below the brand inside the navi
 The white example buttons came from help-tooltip wrappers between the button container and button, which bypassed the old direct-child CSS selector. Descendant selectors now style those buttons, and the Appearance button uses its actual `stPopoverButton` test identifier. Scoped secondary-button surfaces explicitly follow the palette, including hover, while active and new-conversation states keep their separate colors.
 
 All **144 tests passed**. AppTest verifies the theme control disappears with navigation, returns with the same preference after reopening, and remains functional on recorded examples without losing chat selection or bottom anchoring. Browser visual confirmation remains separate.
+
+## Conversation title header
+
+Personal/test conversations now use one compact header with a Zubumafu monogram, store identity, conversation title and a small delete action. The generic introductory banner and separate oversized anchored heading were removed. Empty conversations and greeting-only titles display `Conversa com Zubumafu`; stored titles and message history remain unchanged. User-derived title text is HTML-escaped before rendering. Test conversations retain their test identity and criteria panel.
+
+All **144 tests passed**, including existing conversation switching and delete/keep confirmation flows. The appearance still requires browser review.
